@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Редактирование задания{% else %}Создание задания{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-plus-circle"></i>
+                    {% if form.instance.pk %}Редактирование задания{% else %}Создание нового задания{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                Название задания <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="{{ form.title.name }}" 
+                                   class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                   id="{{ form.title.id_for_label }}" 
+                                   value="{{ form.title.value|default:'' }}" required>
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.task_type.id_for_label }}" class="form-label">
+                                Тип задачи <span class="text-danger">*</span>
+                            </label>
+                            <select name="{{ form.task_type.name }}" 
+                                    class="form-control {% if form.task_type.errors %}is-invalid{% endif %}"
+                                    id="{{ form.task_type.id_for_label }}" required>
+                                <option value="">Выберите тип задачи</option>
+                                {% for value, label in form.task_type.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}" {% if form.task_type.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.task_type.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.task_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        {% if user.employee.is_admin %}
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">
+                                Отдел <span class="text-danger">*</span>
+                            </label>
+                            <select name="{{ form.department.name }}" 
+                                    class="form-control {% if form.department.errors %}is-invalid{% endif %}"
+                                    id="{{ form.department.id_for_label }}" required>
+                                <option value="">Выберите отдел</option>
+                                {% for dept in form.department.field.queryset %}
+                                    <option value="{{ dept.id }}" {% if form.department.value == dept.id %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.department.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.department.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Отдел
+                            </label>
+                            <div class="form-control-plaintext">
+                                <i class="bi bi-building"></i> {{ user.employee.department.name }}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-info-circle"></i> Отдел автоматически установлен
+                                </small>
+                            </div>
+                            {{ form.department }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                Назначить на <span class="text-danger">*</span>
+                            </label>
+                            <select name="{{ form.assigned_to.name }}" 
+                                    class="form-control {% if form.assigned_to.errors %}is-invalid{% endif %}"
+                                    id="{{ form.assigned_to.id_for_label }}" required>
+                                <option value="">Выберите сотрудника</option>
+                                {% for emp in form.assigned_to.field.queryset %}
+                                    <option value="{{ emp.id }}" {% if form.assigned_to.value == emp.id %}selected{% endif %}>
+                                        {{ emp.user.get_full_name|default:emp.user.username }} ({{ emp.department.name }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.assigned_to.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.assigned_to.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                Приоритет <span class="text-danger">*</span>
+                            </label>
+                            <select name="{{ form.priority.name }}" 
+                                    class="form-control {% if form.priority.errors %}is-invalid{% endif %}"
+                                    id="{{ form.priority.id_for_label }}" required>
+                                {% for value, label in form.priority.field.choices %}
+                                    <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.priority.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.priority.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                                Срок выполнения <span class="text-danger">*</span>
+                            </label>
+                            <input type="datetime-local" name="{{ form.due_date.name }}" 
+                                   class="form-control {% if form.due_date.errors %}is-invalid{% endif %}"
+                                   id="{{ form.due_date.id_for_label }}" 
+                                   value="{{ form.due_date.value|date:'Y-m-d\TH:i'|default:'' }}" required>
+                            {% if form.due_date.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.due_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            Описание <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="{{ form.description.name }}" 
+                                  class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                  id="{{ form.description.id_for_label }}" 
+                                  rows="4" required>{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.comment.id_for_label }}" class="form-label">
+                            Комментарий к заданию
+                        </label>
+                        <textarea name="{{ form.comment.name }}" 
+                                  class="form-control {% if form.comment.errors %}is-invalid{% endif %}"
+                                  id="{{ form.comment.id_for_label }}" 
+                                  rows="3" placeholder="Дополнительные комментарии к заданию...">{{ form.comment.value|default:'' }}</textarea>
+                        {% if form.comment.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.comment.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> Необязательное поле для дополнительных заметок
+                        </div>
+                    </div>
+                    
+
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'shift_log:task_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Назад к списку
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i>
+                            {% if form.instance.pk %}Сохранить изменения{% else %}Создать задание{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Форма задания загружена');
+    
+    // Получаем элементы формы
+    var departmentSelect = document.getElementById('{{ form.department.id_for_label }}');
+    var assignedToSelect = document.getElementById('{{ form.assigned_to.id_for_label }}');
+    
+    // Проверяем, есть ли поле отдела (только для администраторов)
+    if (departmentSelect) {
+        console.log('Поле отдела найдено, добавляем обработчик');
+        
+        // Обработчик изменения отдела
+        departmentSelect.addEventListener('change', function() {
+            var departmentId = this.value;
+            console.log('Отдел изменен на:', departmentId);
+            
+            if (departmentId) {
+                // Очищаем список сотрудников
+                assignedToSelect.innerHTML = '<option value="">Загрузка сотрудников...</option>';
+                
+                // Загружаем сотрудников для выбранного отдела
+                fetch('/api/get-employees-by-department/?department_id=' + departmentId)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Получены сотрудники:', data);
+                        
+                        // Очищаем список
+                        assignedToSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+                        
+                        // Добавляем сотрудников
+                        if (data.employees && data.employees.length > 0) {
+                            data.employees.forEach(function(employee) {
+                                var option = document.createElement('option');
+                                option.value = employee.id;
+                                option.textContent = employee.name;
+                                assignedToSelect.appendChild(option);
+                            });
+                        } else {
+                            var option = document.createElement('option');
+                            option.value = '';
+                            option.textContent = 'Нет доступных сотрудников';
+                            assignedToSelect.appendChild(option);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при загрузке сотрудников:', error);
+                        assignedToSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+                    });
+            } else {
+                // Если отдел не выбран, очищаем список сотрудников
+                assignedToSelect.innerHTML = '<option value="">Сначала выберите отдел</option>';
+            }
+        });
+        
+        // Если отдел уже выбран при загрузке страницы, загружаем сотрудников
+        if (departmentSelect.value) {
+            departmentSelect.dispatchEvent(new Event('change'));
+        }
+    } else {
+        console.log('Поле отдела не найдено (не администратор)');
+    }
+});
+</script>
+{% endblock %} 

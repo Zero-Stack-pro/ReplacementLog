@@ -1,0 +1,660 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}История изменений заданий{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Заголовок страницы -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-clock-history"></i> История изменений заданий
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if employee.position == 'admin' %}
+                            Все задания за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                        {% elif employee.position == 'supervisor' %}
+                            Задания отдела {{ employee.department.name }} за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                        {% else %}
+                            Мои задания за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.total }}</h4>
+                                    <small>Всего заданий</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-list-task fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.completed }}</h4>
+                                    <small>Завершено</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-check-circle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.in_progress }}</h4>
+                                    <small>В работе</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-clock fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ stats.pending }}</h4>
+                                    <small>Ожидает</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-hourglass-split fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фильтры -->
+            <div class="card mb-4 filter-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-funnel"></i> Фильтры
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        {% if employee.position in 'admin,supervisor' %}
+                        <div class="col-md-3">
+                            <div class="filter-label">Отдел</div>
+                            {% if employee.position == 'admin' %}
+                                <select name="department" id="department" class="form-select filter-value">
+                                    <option value="">Все отделы</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if filters.department == dept.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="hidden" name="department" value="{{ employee.department.id }}">
+                                <div class="filter-value">{{ employee.department.name }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-3">
+                            <div class="filter-label">Статус</div>
+                            <select name="status" id="status" class="form-select filter-value">
+                                <option value="">Все статусы</option>
+                                {% for status_code, status_name in status_choices %}
+                                <option value="{{ status_code }}" {% if filters.status == status_code %}selected{% endif %}>
+                                    {{ status_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="filter-label">Дата с</div>
+                            <input type="date" name="date_from" id="date_from" class="form-control filter-value" 
+                                   value="{{ filters.date_from }}">
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="filter-label">Дата по</div>
+                            <input type="date" name="date_to" id="date_to" class="form-control filter-value" 
+                                   value="{{ filters.date_to }}">
+                        </div>
+                        
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="d-flex gap-2 w-100">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="bi bi-search"></i> Применить
+                                </button>
+                                <a href="{% url 'shift_log:reports_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Список заданий -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-ul"></i> Список заданий
+                        </h5>
+                        <span class="badge bg-primary">{{ tasks.paginator.count }} заданий</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if tasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="min-width: 250px;">Задание</th>
+                                        {% if employee.position in 'admin,supervisor' %}
+                                        <th style="min-width: 150px;">Исполнитель</th>
+                                        {% endif %}
+                                        <th style="min-width: 100px;">Статус</th>
+                                        <th style="min-width: 80px;">Приоритет</th>
+                                        <th style="min-width: 100px;">Срок</th>
+                                        <th style="min-width: 120px;">Комментарий / История</th>
+                                        <th style="min-width: 80px;">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in tasks %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0">
+                                                    <i class="bi bi-list-task text-primary"></i>
+                                                </div>
+                                                <div class="flex-grow-1 ms-2">
+                                                    <h6 class="mb-1">
+                                                        <a href="{% url 'shift_log:task_detail' task.pk %}" 
+                                                           class="text-decoration-none">
+                                                            {{ task.title|truncatechars:40 }}
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted d-block">
+                                                        {{ task.description|truncatechars:60 }}
+                                                    </small>
+                                                    {% if employee.position in 'admin,supervisor' %}
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-building"></i> {{ task.department.name }}
+                                                    </small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {% if employee.position in 'admin,supervisor' %}
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-2">
+                                                    <div class="avatar-title bg-light rounded-circle">
+                                                        {{ task.assigned_to.user.first_name|first|upper }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium small">{{ task.assigned_to.user.get_full_name|truncatechars:15 }}</div>
+                                                    <small class="text-muted">{{ task.assigned_to.get_position_display_name }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {% endif %}
+                                        <td>
+                                            <span class="badge bg-{{ task.status|yesno:'success,warning,info,secondary' }}">
+                                                {{ task.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ task.priority|yesno:'danger,warning,info,success' }}">
+                                                {{ task.get_priority_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="text-center">
+                                                <div class="fw-medium small">{{ task.due_date|date:"d.m.Y" }}</div>
+                                                <small class="text-muted">{{ task.due_date|time:"H:i" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if task.comment %}
+                                                <div class="text-truncate" style="max-width: 120px;" title="{{ task.comment }}">
+                                                    <i class="bi bi-chat-dots text-info"></i>
+                                                    {{ task.comment|truncatechars:25 }}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted small">-</span>
+                                            {% endif %}
+                                            {% if task.activity_logs.all %}
+                                            <div class="mt-1">
+                                                <small class="badge bg-info">{{ task.activity_logs.count }} изменений</small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                                <a href="{% url 'shift_log:task_detail' task.pk %}" 
+                                                   class="btn btn-outline-primary btn-sm" title="Просмотр">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                {% if task.activity_logs.all %}
+                                                <button type="button" class="btn btn-outline-info btn-sm" 
+                                                        title="История изменений" 
+                                                        onclick="openHistoryModal({{ task.id }}, '{{ task.title|escapejs }}', '{{ task.description|escapejs }}', '{{ task.comment|escapejs }}')">
+                                                    <i class="bi bi-clock-history"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Пагинация -->
+                        {% if tasks.has_other_pages %}
+                        <div class="card-footer">
+                            <nav aria-label="Навигация по страницам">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if tasks.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                                <i class="bi bi-chevron-double-left"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                                <i class="bi bi-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in tasks.paginator.page_range %}
+                                        {% if tasks.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > tasks.number|add:'-3' and num < tasks.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if tasks.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ tasks.next_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                                <i class="bi bi-chevron-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-list-task text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-muted">Задания не найдены</h5>
+                            <p class="text-muted">По выбранным критериям задания не найдены</p>
+                            <a href="{% url 'shift_log:reports_list' %}?date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Сбросить фильтры
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Универсальное модальное окно для истории изменений -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historyModalLabel">
+                    <i class="bi bi-clock-history"></i> История изменений задания
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="historyModalBody">
+                <!-- Контент будет загружен динамически -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <a href="#" class="btn btn-primary" id="historyModalTaskLink">
+                    <i class="bi bi-arrow-right"></i> Перейти к заданию
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-title {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* Стили для неактивного поля отдела */
+.form-control:disabled {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.form-control:disabled:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+/* Стили для подсказки под полем */
+.form-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* Стили для компактной таблицы */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table th {
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Компактные кнопки */
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+.btn-group-vertical .btn:last-child {
+    margin-bottom: 0;
+}
+
+/* Компактные бейджи */
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .btn-group-vertical .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Минимальные исправления z-index для модальных окон */
+.modal {
+    z-index: 1055 !important;
+}
+
+.modal-backdrop {
+    z-index: 1054 !important;
+}
+
+.modal-dialog {
+    z-index: 1056 !important;
+}
+
+.modal-content {
+    z-index: 1056 !important;
+    background: #ffffff !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Очищаем дублирующиеся backdrop элементы при загрузке страницы
+    function cleanupBackdrops() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        if (backdrops.length > 1) {
+            // Оставляем только первый backdrop
+            for (let i = 1; i < backdrops.length; i++) {
+                backdrops[i].remove();
+            }
+        }
+    }
+    
+    // Выполняем очистку при загрузке
+    cleanupBackdrops();
+    
+    // Устанавливаем значения по умолчанию для дат (вчерашняя дата)
+    const dateFromInput = document.getElementById('date_from');
+    const dateToInput = document.getElementById('date_to');
+    
+    // Если поля дат пустые, устанавливаем вчерашнюю дату
+    if (dateFromInput && !dateFromInput.value) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateFromInput.value = yesterday.toISOString().split('T')[0];
+    }
+    
+    if (dateToInput && !dateToInput.value) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateToInput.value = yesterday.toISOString().split('T')[0];
+    }
+    
+    // Автоматически отправляем форму при изменении дат, если они установлены
+    function autoSubmitForm() {
+        if (dateFromInput.value && dateToInput.value) {
+            document.querySelector('form[method="get"]').submit();
+        }
+    }
+    
+    // Добавляем обработчики событий для автоматической отправки формы
+    if (dateFromInput) {
+        dateFromInput.addEventListener('change', autoSubmitForm);
+    }
+    if (dateToInput) {
+        dateToInput.addEventListener('change', autoSubmitForm);
+    }
+    
+    // Функция для открытия модального окна с историей изменений
+    window.openHistoryModal = function(taskId, title, description, comment) {
+        // Показываем индикатор загрузки
+        const modalBody = document.getElementById('historyModalBody');
+        modalBody.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 text-muted">Загрузка истории изменений...</p>
+            </div>
+        `;
+        
+        // Открываем модальное окно
+        const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+        modal.show();
+        
+        // Загружаем данные истории изменений
+        fetch(`/api/tasks/${taskId}/history/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Формируем HTML для истории изменений
+                    let historyHtml = `
+                        <h6>${title}</h6>
+                        <p class="text-muted mb-3">${description}</p>
+                    `;
+                    
+                    if (comment) {
+                        historyHtml += `
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-chat-dots"></i>
+                                <strong>Комментарий:</strong>
+                                ${comment.replace(/\n/g, '<br>')}
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.history && data.history.length > 0) {
+                        historyHtml += '<div class="history-list">';
+                        data.history.forEach(log => {
+                            let cardBody = '';
+                            
+                            // Если есть изменения статуса
+                            if (log.changes && log.changes.old_status && log.changes.new_status) {
+                                cardBody += `
+                                    <div class="mb-2">
+                                        <strong>Изменение статуса:</strong>
+                                        <span class="badge bg-secondary">${log.changes.old_status}</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                        <span class="badge bg-primary">${log.changes.new_status}</span>
+                                    </div>
+                                `;
+                            }
+                            
+                            // Если есть комментарий
+                            if (log.changes && log.changes.comment) {
+                                cardBody += `
+                                    <div class="mt-2">
+                                        <strong>Комментарий:</strong>
+                                        <p class="mb-0 mt-1">${log.changes.comment.replace(/\n/g, '<br>')}</p>
+                                    </div>
+                                `;
+                            }
+                            
+                            // Если нет специальных изменений, показываем описание
+                            if (!cardBody) {
+                                cardBody = log.description || 'Изменение внесено';
+                            }
+                            
+                            historyHtml += `
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>${log.user_name}</strong>
+                                                <small class="text-muted ms-2">${log.timestamp}</small>
+                                            </div>
+                                            <span class="badge bg-primary">${log.action}</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        ${cardBody}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        historyHtml += '</div>';
+                    } else {
+                        historyHtml += '<p class="text-muted">История изменений не найдена.</p>';
+                    }
+                    
+                    modalBody.innerHTML = historyHtml;
+                } else {
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Ошибка при загрузке истории изменений: ${data.error || 'Неизвестная ошибка'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке истории:', error);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Ошибка при загрузке истории изменений. Попробуйте обновить страницу.
+                    </div>
+                `;
+            });
+        
+        // Обновляем ссылку на задание
+        document.getElementById('historyModalTaskLink').href = `/tasks/${taskId}/`;
+    };
+    
+    // Обработка модального окна
+    const historyModal = document.getElementById('historyModal');
+    if (historyModal) {
+        // Очищаем дублирующиеся backdrop элементы при показе
+        historyModal.addEventListener('shown.bs.modal', function() {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 1) {
+                for (let i = 1; i < backdrops.length; i++) {
+                    backdrops[i].remove();
+                }
+            }
+        });
+        
+        // Очистка при скрытии модального окна
+        historyModal.addEventListener('hidden.bs.modal', function() {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+        });
+    }
+});
+</script>
+{% endblock %} 

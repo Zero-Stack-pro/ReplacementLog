@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - Система сменного журнала{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+<div class="row">
+    <!-- Компактное приветствие -->
+    <div class="col-12 mb-2">
+        <div class="welcome-banner">
+            <div class="welcome-content">
+                <div class="welcome-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="welcome-text">
+                    <h4 class="welcome-title">
+                        Добро пожаловать, {{ employee.user.get_full_name|default:employee.user.username }}!
+                    </h4>
+                    <div class="welcome-info">
+                        <span class="welcome-badge">
+                            <i class="bi bi-building"></i> {{ employee.department.name }}
+                        </span>
+                        <span class="welcome-badge">
+                            <i class="bi bi-award"></i> {{ employee.get_position_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Активные задания -->
+    <div class="col-12 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-task"></i> 
+                    {% if employee.position == 'admin' %}
+                        Активные задания по отделам
+                    {% elif employee.position == 'supervisor' %}
+                        Активные задания отдела
+                    {% else %}
+                        Мои активные задания
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if is_admin_view and tasks_by_department %}
+                    <!-- Отображение для администратора - по отделам -->
+                    {% for dept_name, dept_tasks in tasks_by_department %}
+                    <div class="department-section mb-3">
+                        <div class="department-header">
+                            <h6 class="text-primary mb-2">
+                                <i class="bi bi-building"></i> {{ dept_name }}
+                                <span class="badge bg-primary ms-2">{{ dept_tasks|length }}</span>
+                            </h6>
+                        </div>
+                        
+                        <div class="tasks-grid">
+                            {% for task in dept_tasks %}
+                            <div class="task-item">
+                                <div class="task-content">
+                                    <h6>{{ task.title }}</h6>
+                                    <div class="mb-2">
+                                        <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
+                                        <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                                    </div>
+                                    <small class="text-muted d-block">
+                                        <strong>Исполнитель:</strong> {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}
+                                    </small>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="{% url 'shift_log:task_detail' task.pk %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Просмотр
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                {% elif active_tasks %}
+                    <!-- Обычное отображение для остальных пользователей -->
+                    <div class="tasks-grid">
+                        {% for task in active_tasks %}
+                        <div class="task-item">
+                            <div class="task-content">
+                                <h6>{{ task.title }}</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
+                                    <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                                    {% if employee.position in 'admin,supervisor' %}
+                                        <span class="badge bg-info">{{ task.department.name }}</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted d-block">
+                                    <strong>Исполнитель:</strong> {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="task-actions">
+                                <a href="{% url 'shift_log:task_detail' task.pk %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Просмотр
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="bi bi-check-circle"></i> 
+                        {% if employee.position == 'admin' %}
+                            Нет активных заданий в системе
+                        {% elif employee.position == 'supervisor' %}
+                            Нет активных заданий в вашем отделе
+                        {% else %}
+                            У вас нет активных заданий
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'shift_log:task_list' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-list-task"></i> Все задания
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика по отделам для администраторов -->
+{% if is_admin_view and department_stats %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up"></i> Статистика по отделам
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for stat in department_stats %}
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <h6 class="text-primary mb-2">{{ stat.name }}</h6>
+                            <div class="d-flex justify-content-around">
+                                <div class="text-center">
+                                    <div class="h5 mb-0 text-success">{{ stat.total }}</div>
+                                    <small class="text-muted">Всего</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h5 mb-0 text-warning">{{ stat.pending }}</div>
+                                    <small class="text-muted">Ожидают</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h5 mb-0 text-primary">{{ stat.in_progress }}</div>
+                                    <small class="text-muted">В работе</small>
+                                </div>
+                                {% if stat.overdue > 0 %}
+                                <div class="text-center">
+                                    <div class="h5 mb-0 text-danger">{{ stat.overdue }}</div>
+                                    <small class="text-muted">Просрочены</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Уведомления -->
+<div class="row mb-3">
+    <div class="col-lg-6">
+        <!-- Уведомления -->
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bell-fill"></i> Уведомления
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if notifications %}
+                    {% for notification in notifications %}
+                    <div class="notification-item mb-3 p-3 border-start border-warning border-4 bg-light">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">
+                                    {% if notification.is_task_related and notification.get_task_url %}
+                                        <a href="{{ notification.get_task_url }}" class="text-decoration-none">
+                                            {{ notification.title }}
+                                            <i class="bi bi-arrow-right-circle ms-1"></i>
+                                        </a>
+                                    {% else %}
+                                        {{ notification.title }}
+                                    {% endif %}
+                                </h6>
+                                <p class="mb-2 text-muted">{{ notification.message }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ notification.sent_at|timesince }} назад
+                                    </small>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-danger">Новое</span>
+                                        {% endif %}
+                                        {% if notification.is_task_related and notification.get_task_url %}
+                                            <a href="{{ notification.get_task_url }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Перейти к задаче
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if not notification.is_read %}
+                            <button class="btn btn-sm btn-outline-success mark-read ms-2" 
+                                    data-notification-id="{{ notification.id }}"
+                                    title="Отметить как прочитанное">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">Нет новых уведомлений</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'shift_log:notifications_list' %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-bell"></i> Все уведомления
+                </a>
+                {% if notifications %}
+                <button class="btn btn-outline-secondary btn-sm ms-2 mark-all-read">
+                    <i class="bi bi-check-all"></i> Отметить все как прочитанные
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if employee.position != 'admin' %}
+    <div class="col-lg-6">
+        <!-- Ежедневный отчёт отдела -->
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Ежедневный отчёт отдела</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="">
+                    {% csrf_token %}
+                    {{ daily_report_form.comment.label_tag }}
+                    {{ daily_report_form.comment }}
+                    {% if daily_report_form.comment.errors %}
+                        <div class="text-danger small">{{ daily_report_form.comment.errors }}</div>
+                    {% endif %}
+                    <button type="submit" name="daily_report_submit" class="btn btn-primary mt-2">
+                        <i class="bi bi-save"></i> Сохранить
+                    </button>
+                </form>
+
+            </div>
+            <div class="card-footer text-end text-muted small">
+                За {{ daily_report.date|date:'d.m.Y' }} | Последнее обновление: {{ daily_report.updated_at|date:'d.m.Y H:i' }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Быстрые действия -->
+{% if employee.position == 'supervisor' or employee.position == 'admin' %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i> Быстрые действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'shift_log:task_create' %}" class="btn btn-success w-100">
+                            <i class="bi bi-plus-circle"></i> Создать задание
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'shift_log:task_list' %}" class="btn btn-warning w-100">
+                            <i class="bi bi-list-task"></i> Управление заданиями
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/admin/" class="btn btn-secondary w-100">
+                            <i class="bi bi-gear"></i> Администрирование
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Обработка уведомлений уже включена в main.js -->
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: box-shadow 0.3s cubic-bezier(.4,0,.2,1), border-color 0.3s cubic-bezier(.4,0,.2,1), transform 0.3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid #e0e0e0;
+    will-change: box-shadow, transform;
+    border-radius: 1rem;
+}
+.card:hover {
+    border-color: #e0e0e0 !important;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+    transform: scale(1.015);
+}
+/* Отключаем увеличение и тень для строк таблицы при наведении */
+.table-hover > tbody > tr:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+</style>
+{% endblock %} 

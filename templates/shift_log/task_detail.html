@@ -1,0 +1,854 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} - Система сменного журнала{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-list-task"></i> Задание: {{ task.title }}</h2>
+            <div>
+                {% if can_edit_task %}
+                <a href="{% url 'shift_log:task_edit' task.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                {% endif %}
+                <a href="{% url 'shift_log:task_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад к списку
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Основная информация -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Основная информация
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Название:</label>
+                        <p>{{ task.title }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Тип задачи:</label>
+                        <p><span class="badge bg-secondary">{{ task.get_task_type_display }}</span></p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Отдел:</label>
+                        <p>{{ task.department.name }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Исполнитель:</label>
+                        <p>
+                            {% if task.assigned_to %}
+                                {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                <br><small class="text-muted">{{ task.assigned_to.department.name }}</small>
+                            {% else %}
+                                <span class="text-muted">Не назначен</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Приоритет:</label>
+                        <p>
+                            {% if task.priority == 'high' %}
+                                <span class="badge bg-danger">Высокий</span>
+                            {% elif task.priority == 'medium' %}
+                                <span class="badge bg-warning">Средний</span>
+                            {% else %}
+                                <span class="badge bg-success">Низкий</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Статус:</label>
+                        <p>
+                            {% if task.status == 'completed' %}
+                                <span class="badge bg-success">Завершено</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary">В работе</span>
+                            {% elif task.status == 'pending' %}
+                                <span class="badge bg-warning">Ожидает</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ task.get_status_display }}</span>
+                            {% endif %}
+                        </p>
+                        
+
+                        
+                        {% if can_update_status %}
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="statusUpdateBtn">
+                                <i class="bi bi-pencil"></i> Изменить статус
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="mt-3">
+                            <small class="text-muted">У вас нет прав для изменения статуса этого задания</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Срок выполнения:</label>
+                        <p>
+                            {% if task.due_date %}
+                                <span class="{% if task.is_overdue %}text-danger{% endif %}">
+                                    {{ task.due_date|date:"d.m.Y H:i" }}
+                                </span>
+                                {% if task.is_overdue %}
+                                    <br><small class="text-danger">Просрочено</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Не указан</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Описание:</label>
+                    <p>{{ task.description|linebreaks }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Комментарий:</label>
+                        {% if can_edit_task %}
+                        <a href="{% url 'shift_log:update_task_comment' task.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% if task.comment %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-chat-dots"></i>
+                            {{ task.comment|linebreaks }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-light">
+                            <i class="bi bi-chat-dots text-muted"></i>
+                            <span class="text-muted">Комментарий не добавлен</span>
+                            {% if can_edit_task %}
+                            <br><small><a href="{% url 'shift_log:update_task_comment' task.id %}" class="text-decoration-none">Добавить комментарий</a></small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- История изменений -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> История изменений
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if task.activity_logs.all %}
+                    <div class="timeline">
+                        {% for log in task.activity_logs.all %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">{{ log.get_action_display }}</h6>
+                                <p class="timeline-text">{{ log.description }}</p>
+                                <small class="text-muted">
+                                    {{ log.created_at|date:"d.m.Y H:i" }} - {{ log.user.get_full_name|default:log.user.username }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">История изменений отсутствует</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Боковая панель -->
+    <div class="col-lg-4">
+        <!-- Вложения -->
+        <div class="card mb-4 attachment-section">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-paperclip"></i> Вложения
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <!-- Форма загрузки вложения -->
+                <div class="attachment-form">
+                    <form id="attachmentForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="file-upload-container">
+                            <div class="file-upload-area" id="fileUploadArea">
+                                <div class="file-upload-content">
+                                    <div class="file-upload-icon">
+                                        <i class="bi bi-cloud-upload"></i>
+                                    </div>
+                                    <div class="file-upload-text">
+                                        <h6 class="mb-2">Загрузить файл</h6>
+                                        <p class="mb-3">Перетащите файл сюда или нажмите для выбора</p>
+                                        <div class="file-upload-info">
+                                            <span class="badge bg-light text-dark me-2">
+                                                <i class="bi bi-image"></i> Изображения
+                                            </span>
+                                            <span class="badge bg-light text-dark me-2">
+                                                <i class="bi bi-file-pdf"></i> PDF
+                                            </span>
+                                            <span class="badge bg-light text-dark me-2">
+                                                <i class="bi bi-file-word"></i> Документы
+                                            </span>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="bi bi-file-zip"></i> Архивы
+                                            </span>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle"></i> Максимальный размер: 10MB
+                                        </small>
+                                    </div>
+                                </div>
+                                <input type="file" class="file-input" id="attachmentFile" name="file" accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar">
+                            </div>
+                            <div class="file-upload-actions">
+                                <button type="submit" class="btn btn-primary upload-btn" id="uploadBtn" disabled>
+                                    <i class="bi bi-upload"></i> Загрузить файл
+                            </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Список вложений -->
+                <div id="attachmentsList" class="attachments-list">
+                    {% if task.attachments.all %}
+                        {% for attachment in task.attachments.all %}
+                        <div class="attachment-item" data-attachment-id="{{ attachment.id }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="attachment-info">
+                                    <div class="attachment-icon">
+                                        <i class="bi bi-file-earmark"></i>
+                                    </div>
+                                    <div class="attachment-details">
+                                        <a href="{% url 'shift_log:download_attachment' attachment.id %}" target="_blank" class="attachment-name">
+                                            {{ attachment.filename }}
+                                        </a>
+                                        <div class="attachment-meta">
+                                            {{ attachment.file_size|filesizeformat }} • 
+                                            {{ attachment.uploaded_at|date:"d.m.Y H:i" }} • 
+                                            {{ attachment.uploaded_by.user.get_full_name|default:attachment.uploaded_by.user.username }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="attachment-actions">
+                                    <a href="{% url 'shift_log:download_attachment' attachment.id %}" target="_blank" class="btn btn-outline-primary" title="Просмотр">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger delete-attachment" data-attachment-id="{{ attachment.id }}" title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-paperclip text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">Вложения отсутствуют</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+
+        
+        <!-- Метаданные -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear"></i> Метаданные
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Создано:</label>
+                    <p class="mb-1">{{ task.created_at|date:"d.m.Y H:i" }}</p>
+                    <small class="text-muted">{{ task.created_by.user.get_full_name|default:task.created_by.user.username }}</small>
+                </div>
+                
+                {% if task.updated_at != task.created_at %}
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Обновлено:</label>
+                    <p class="mb-1">{{ task.updated_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                {% endif %}
+                
+                {% if task.completed_at %}
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Завершено:</label>
+                    <p class="mb-1">{{ task.completed_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== ОТЛАДКА ЗАГРУЗКИ ФАЙЛОВ ===');
+    
+    // Обработка загрузки вложений
+    const attachmentForm = document.getElementById('attachmentForm');
+    const attachmentFile = document.getElementById('attachmentFile');
+    const attachmentsList = document.getElementById('attachmentsList');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    console.log('attachmentForm:', attachmentForm);
+    console.log('attachmentFile:', attachmentFile);
+    console.log('attachmentsList:', attachmentsList);
+    console.log('fileUploadArea:', fileUploadArea);
+    console.log('uploadBtn:', uploadBtn);
+    
+    // Drag and drop functionality
+    if (fileUploadArea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            fileUploadArea.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            fileUploadArea.classList.remove('dragover');
+        }
+
+        fileUploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                attachmentFile.files = files;
+                handleFileSelect();
+            }
+        }
+    }
+    
+    // Handle file selection
+    if (attachmentFile) {
+        attachmentFile.addEventListener('change', handleFileSelect);
+    }
+    
+    function handleFileSelect() {
+        console.log('handleFileSelect вызвана');
+        const file = attachmentFile.files[0];
+        console.log('Выбранный файл:', file);
+        console.log('fileUploadArea:', fileUploadArea);
+        
+        if (file && fileUploadArea) {
+            console.log('Файл и область загрузки найдены, обновляем UI');
+            // Update UI to show file is selected
+            fileUploadArea.classList.add('has-file', 'file-selected');
+            
+            // Update upload area content to show selected file
+            const content = fileUploadArea.querySelector('.file-upload-content');
+            console.log('Контент области загрузки:', content);
+            if (content) {
+                content.innerHTML = `
+                    <div class="file-upload-icon">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <div class="file-upload-text">
+                        <h6 class="mb-2">Файл выбран</h6>
+                        <p class="mb-3">${file.name}</p>
+                        <small class="text-muted d-block">
+                            <i class="bi bi-info-circle"></i> Размер: ${(file.size / 1024 / 1024).toFixed(2)} MB
+                        </small>
+                    </div>
+                `;
+                console.log('Контент обновлен');
+            }
+            
+            // Enable upload button
+            console.log('uploadBtn:', uploadBtn);
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                console.log('Кнопка загрузки активирована');
+            }
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                fileUploadArea.classList.remove('file-selected');
+            }, 400);
+        } else {
+            console.log('Файл или область загрузки не найдены');
+        }
+    }
+    
+    if (attachmentForm) {
+        attachmentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const file = attachmentFile.files[0];
+            
+            if (!file) {
+                showMessage('Пожалуйста, выберите файл для загрузки', 'error');
+                return;
+            }
+            
+            formData.append('file', file);
+            formData.append('attachment_type', 'task');
+            formData.append('object_id', '{{ task.id }}');
+            
+            // Show loading state
+            uploadBtn.classList.add('loading');
+            uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Загрузка...';
+            uploadBtn.disabled = true;
+            
+            // Add progress bar
+            const progressBar = document.createElement('div');
+            progressBar.className = 'upload-progress';
+            progressBar.innerHTML = '<div class="upload-progress-bar"></div>';
+            fileUploadArea.appendChild(progressBar);
+            
+            // Simulate progress (since we can't get real progress from fetch)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressBar.querySelector('.upload-progress-bar').style.width = progress + '%';
+            }, 200);
+            
+            fetch('{% url "shift_log:upload_attachment" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.querySelector('.upload-progress-bar').style.width = '100%';
+                
+                setTimeout(() => {
+                if (data.success) {
+                        // Add new attachment to list
+                    addAttachmentToList(data.attachment_id, file.name, data.file_size, data.uploaded_by);
+                    
+                        // Reset form
+                        resetFileUpload();
+                    
+                        // Show success message
+                    showMessage('Файл успешно загружен', 'success');
+                } else {
+                    showMessage('Ошибка при загрузке файла: ' + (data.errors ? Object.values(data.errors).join(', ') : data.error), 'error');
+                }
+                    
+                    // Remove progress bar
+                    progressBar.remove();
+                    
+                    // Reset button
+                    uploadBtn.classList.remove('loading');
+                    uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Загрузить файл';
+                    uploadBtn.disabled = true;
+                }, 500);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressBar.remove();
+                console.error('Error:', error);
+                showMessage('Ошибка при загрузке файла', 'error');
+                
+                // Reset button
+                uploadBtn.classList.remove('loading');
+                uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Загрузить файл';
+                uploadBtn.disabled = false;
+            });
+        });
+    }
+    
+    function resetFileUpload() {
+        // Reset file input
+        if (attachmentFile) {
+            attachmentFile.value = '';
+        }
+        
+        // Reset upload area
+        if (fileUploadArea) {
+            fileUploadArea.classList.remove('has-file');
+            
+            // Reset upload area content
+            const content = fileUploadArea.querySelector('.file-upload-content');
+            if (content) {
+                content.innerHTML = `
+                    <div class="file-upload-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <div class="file-upload-text">
+                        <h6 class="mb-2">Загрузить файл</h6>
+                        <p class="mb-3">Перетащите файл сюда или нажмите для выбора</p>
+                        <div class="file-upload-info">
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="bi bi-image"></i> Изображения
+                            </span>
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </span>
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="bi bi-file-word"></i> Документы
+                            </span>
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-file-zip"></i> Архивы
+                            </span>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i> Максимальный размер: 10MB
+                        </small>
+                    </div>
+                `;
+            }
+        }
+        
+        // Disable upload button
+        if (uploadBtn) {
+            uploadBtn.disabled = true;
+        }
+    }
+    
+    // Обработка удаления вложений
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-attachment')) {
+            e.preventDefault();
+            
+            const attachmentId = e.target.closest('.delete-attachment').dataset.attachmentId;
+            const attachmentItem = e.target.closest('.attachment-item');
+            
+            if (confirm('Вы уверены, что хотите удалить это вложение?')) {
+                fetch(`/attachments/${attachmentId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        attachmentItem.remove();
+                        showMessage('Вложение удалено', 'success');
+                        
+                        // Если больше нет вложений, показываем сообщение
+                        const remainingAttachments = attachmentsList.querySelectorAll('.attachment-item');
+                        if (remainingAttachments.length === 0) {
+                            attachmentsList.innerHTML = `
+                                <div class="text-center py-4">
+                                    <i class="bi bi-paperclip text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mt-2">Вложения отсутствуют</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        showMessage('Ошибка при удалении вложения: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Ошибка при удалении вложения', 'error');
+                });
+            }
+        }
+    });
+    
+    // Функция для добавления вложения в список
+    function addAttachmentToList(attachmentId, filename, fileSize, uploadedBy) {
+        const attachmentHtml = `
+            <div class="attachment-item" data-attachment-id="${attachmentId}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="attachment-info">
+                        <div class="attachment-icon">
+                            <i class="bi bi-file-earmark"></i>
+                        </div>
+                        <div class="attachment-details">
+                            <a href="/attachments/${attachmentId}/download/" target="_blank" class="attachment-name">
+                                ${filename}
+                            </a>
+                            <div class="attachment-meta">
+                                ${fileSize} • 
+                                ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})} • 
+                                ${uploadedBy}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="attachment-actions">
+                        <a href="/attachments/${attachmentId}/download/" target="_blank" class="btn btn-outline-primary" title="Просмотр">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <button class="btn btn-outline-danger delete-attachment" data-attachment-id="${attachmentId}" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Удаляем сообщение "Вложения отсутствуют" если оно есть
+        const noAttachmentsMsg = attachmentsList.querySelector('.text-center');
+        if (noAttachmentsMsg) {
+            noAttachmentsMsg.remove();
+        }
+        
+        // Добавляем новое вложение в список
+        attachmentsList.insertAdjacentHTML('beforeend', attachmentHtml);
+    }
+    
+    // Функция для показа сообщений
+    function showMessage(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Добавляем сообщение в начало страницы
+        const container = document.querySelector('.container');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Автоматически скрываем через 5 секунд
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+    
+    console.log('=== ОТЛАДКА МОДАЛЬНОГО ОКНА ===');
+    
+    // Проверяем, есть ли модальное окно
+    const modal = document.getElementById('statusModal');
+    console.log('Модальное окно найдено:', !!modal);
+    
+    if (modal) {
+        console.log('ID модального окна:', modal.id);
+        console.log('Классы модального окна:', modal.className);
+    }
+    
+    // Проверяем, есть ли кнопка
+    const statusButton = document.getElementById('statusUpdateBtn');
+    console.log('Кнопка изменения статуса найдена:', !!statusButton);
+    
+    if (statusButton) {
+        console.log('Кнопка найдена, добавляем обработчик клика');
+        statusButton.addEventListener('click', function(e) {
+            console.log('Кнопка нажата!');
+            e.preventDefault();
+            
+            // Создаем модальное окно программно
+            const modalHtml = `
+                <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="statusModalLabel">
+                                    <i class="bi bi-pencil"></i> Изменить статус задания
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="post" action="{% url 'shift_log:task_status_update' task.pk %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="id_status" class="form-label">Новый статус</label>
+                                        <select name="status" id="id_status" class="form-control">
+                                            <option value="pending">Ожидает</option>
+                                            <option value="in_progress">В работе</option>
+                                            <option value="completed">Завершено</option>
+                                            <option value="cancelled">Отменено</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="id_comment" class="form-label">Комментарий</label>
+                                        <textarea name="comment" id="id_comment" class="form-control" rows="3" placeholder="Введите комментарий к изменению статуса..."></textarea>
+                                        <div class="form-text">При изменении статуса на "Завершено" комментарий обязателен</div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check"></i> Сохранить
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Удаляем существующее модальное окно, если есть
+            const existingModal = document.getElementById('statusModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Добавляем новое модальное окно в body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Инициализируем и показываем модальное окно
+            const modalElement = document.getElementById('statusModal');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // Добавляем обработчик для поля комментария
+            const statusSelect = document.getElementById('id_status');
+            const commentField = document.getElementById('id_comment');
+            
+            if (statusSelect && commentField) {
+                function toggleCommentField() {
+                    const selectedStatus = statusSelect.value;
+                    
+                    if (selectedStatus === 'completed') {
+                        commentField.required = true;
+                        commentField.classList.add('border-warning');
+                    } else {
+                        commentField.required = false;
+                        commentField.classList.remove('border-warning');
+                    }
+                }
+                
+                toggleCommentField();
+                statusSelect.addEventListener('change', toggleCommentField);
+            }
+        });
+    }
+    
+    // Проверяем Bootstrap
+    if (typeof bootstrap !== 'undefined') {
+        console.log('Bootstrap загружен:', typeof bootstrap);
+        console.log('Bootstrap Modal доступен:', typeof bootstrap.Modal);
+    } else {
+        console.log('Bootstrap НЕ загружен!');
+    }
+    
+    console.log('=== КОНЕЦ ОТЛАДКИ ===');
+    
+    const statusSelect = document.getElementById('{{ status_form.status.id_for_label }}');
+    const commentField = document.getElementById('{{ status_form.comment.id_for_label }}');
+    const commentLabel = commentField ? commentField.previousElementSibling : null;
+    const commentHelp = commentField ? commentField.nextElementSibling : null;
+    
+    if (statusSelect && commentField) {
+        function toggleCommentField() {
+            const selectedStatus = statusSelect.value;
+            
+            if (selectedStatus === 'completed') {
+                commentField.required = true;
+                commentField.classList.add('border-warning');
+                if (commentLabel) commentLabel.classList.add('text-warning');
+                if (commentHelp) commentHelp.classList.add('text-warning');
+            } else {
+                commentField.required = false;
+                commentField.classList.remove('border-warning');
+                if (commentLabel) commentLabel.classList.remove('text-warning');
+                if (commentHelp) commentHelp.classList.remove('text-warning');
+            }
+        }
+        
+        // Инициализация при загрузке
+        toggleCommentField();
+        
+        // Обработчик изменения статуса
+        statusSelect.addEventListener('change', toggleCommentField);
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #007bff;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 12px;
+    width: 2px;
+    height: calc(100% + 8px);
+    background-color: #e9ecef;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin-bottom: 5px;
+    color: #6c757d;
+}
+</style>
+{% endblock %} 

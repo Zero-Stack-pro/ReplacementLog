@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Virtualenv
+venv/
+ENV/
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# System
+Thumbs.db
+
+# Test data
+create_test_data.py 

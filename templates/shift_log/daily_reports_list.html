@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Ежедневные отчёты{% endblock %}
+
+{% block extra_css %}
+<style>
+.table-responsive {
+    overflow-x: hidden !important;
+    overflow-y: visible;
+}
+.table-responsive::-webkit-scrollbar {
+    display: none !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4"><i class="bi bi-journal-text"></i> Ежедневные отчёты</h2>
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-auto">
+            <label for="date_from" class="form-label">С даты</label>
+            <input type="date" id="date_from" name="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-auto">
+            <label for="date_to" class="form-label">По дату</label>
+            <input type="date" id="date_to" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        {% if departments %}
+        <div class="col-auto">
+            <label for="department" class="form-label">Отдел</label>
+            <select id="department" name="department" class="form-select">
+                <option value="">Все отделы</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if dept.id|stringformat:'s' == selected_department %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Показать</button>
+        </div>
+    </form>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Дата</th>
+                    <th>Отдел</th>
+                    <th>Комментарий</th>
+                    <th>Автор</th>
+                    <th>Обновлено</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.date|date:'d.m.Y' }}</td>
+                    <td>{{ report.department.name }}</td>
+                    <td style="white-space: pre-line; max-width: 400px;">{{ report.comment|default:'—' }}</td>
+                    <td>{% if report.created_by %}{{ report.created_by.get_full_name|default:report.created_by.username }}{% else %}—{% endif %}</td>
+                    <td>{{ report.updated_at|date:'d.m.Y H:i' }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Нет отчётов за выбранный период</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 
