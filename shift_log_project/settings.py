@@ -91,10 +91,15 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ReplacementLog',
+        'USER': 'zero',
+        'PASSWORD': '33423342',
+        'HOST': '10.45.20.40',  
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation
