@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -86,20 +85,24 @@ CHANNEL_LAYERS = {
     },
 }
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+# PostgreSQL settings (боевой сервер)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ReplacementLog',
         'USER': 'zero',
         'PASSWORD': '33423342',
-        'HOST': '10.45.20.40',  
+        'HOST': '10.45.20.40',  # production server
         'PORT': '5432',
     }
 }
-
+# SQLite3 settings для локальной разработки (закомментировано)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation

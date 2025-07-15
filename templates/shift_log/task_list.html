@@ -43,7 +43,7 @@
                         <div class="col-md-2 mb-3">
                             <label for="{{ filter_form.department.id_for_label }}" class="form-label">Отдел</label>
                             {% if user.employee.is_admin %}
-                                {{ filter_form.department }}
+                            {{ filter_form.department }}
                             {% else %}
                                 <select class="form-select" disabled>
                                     {% for dept in filter_form.department.field.queryset %}

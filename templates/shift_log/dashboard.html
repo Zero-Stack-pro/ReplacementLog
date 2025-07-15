@@ -180,6 +180,76 @@
 </div>
 {% endif %}
 
+<!-- Ежедневный отчёт и списания материалов -->
+{% if employee.position != 'admin' %}
+<div class="row mb-3">
+    <div class="col-md-6 mb-3">
+        <!-- Ежедневный отчёт отдела -->
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Ежедневный отчёт отдела</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="">
+                    {% csrf_token %}
+                    {{ daily_report_form.comment.label_tag }}
+                    {{ daily_report_form.comment }}
+                    {% if daily_report_form.comment.errors %}
+                        <div class="text-danger small">{{ daily_report_form.comment.errors }}</div>
+                    {% endif %}
+                    <button type="submit" name="daily_report_submit" class="btn btn-primary mt-2">
+                        <i class="bi bi-save"></i> Сохранить
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-end text-muted small">
+                За {{ daily_report.date|date:'d.m.Y' }} | Последнее обновление: {{ daily_report.updated_at|date:'d.m.Y H:i' }}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <!-- Списания материалов -->
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-box-arrow-down"></i> Списания материалов (за сегодня)</h5>
+            </div>
+            <div class="card-body">
+                {% if writeoffs %}
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Что</th>
+                            <th>Сколько</th>
+                            <th>Куда</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for w in writeoffs %}
+                        <tr>
+                            <td>{{ w.material_name }}</td>
+                            <td>{{ w.quantity }}</td>
+                            <td>{{ w.destination }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-muted">Нет списаний за сегодня.</div>
+                {% endif %}
+                <div class="mt-2 text-end">
+                    <a href="{% url 'shift_log:material_writeoff_list' %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-list"></i> Все списания
+                    </a>
+                    <a href="{% url 'shift_log:material_writeoff_create' %}" class="btn btn-success btn-sm ms-2">
+                        <i class="bi bi-plus-circle"></i> Добавить
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Уведомления -->
 <div class="row mb-3">
     <div class="col-lg-6">
@@ -252,39 +322,8 @@
             </div>
         </div>
     </div>
-    {% if employee.position != 'admin' %}
     <div class="col-lg-6">
-        <!-- Ежедневный отчёт отдела -->
-        <div class="card h-100">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Ежедневный отчёт отдела</h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="">
-                    {% csrf_token %}
-                    {{ daily_report_form.comment.label_tag }}
-                    {{ daily_report_form.comment }}
-                    {% if daily_report_form.comment.errors %}
-                        <div class="text-danger small">{{ daily_report_form.comment.errors }}</div>
-                    {% endif %}
-                    <button type="submit" name="daily_report_submit" class="btn btn-primary mt-2">
-                        <i class="bi bi-save"></i> Сохранить
-                    </button>
-                </form>
-
-            </div>
-            <div class="card-footer text-end text-muted small">
-                За {{ daily_report.date|date:'d.m.Y' }} | Последнее обновление: {{ daily_report.updated_at|date:'d.m.Y H:i' }}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Быстрые действия -->
-{% if employee.position == 'supervisor' or employee.position == 'admin' %}
-<div class="row mt-4">
-    <div class="col-12">
+        <!-- Быстрые действия -->
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -292,28 +331,28 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'shift_log:task_create' %}" class="btn btn-success w-100">
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if employee.position in 'admin,supervisor' %}
+                        <a href="{% url 'shift_log:task_create' %}" class="btn btn-success flex-fill text-nowrap">
                             <i class="bi bi-plus-circle"></i> Создать задание
                         </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{% url 'shift_log:task_list' %}" class="btn btn-warning w-100">
+                        <a href="{% url 'shift_log:task_list' %}" class="btn btn-warning flex-fill text-nowrap">
                             <i class="bi bi-list-task"></i> Управление заданиями
                         </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/admin/" class="btn btn-secondary w-100">
-                            <i class="bi bi-gear"></i> Администрирование
+                    {% endif %}
+                    <a href="/admin/" class="btn btn-secondary flex-fill text-nowrap">
+                        <i class="bi bi-gear"></i> Администрирование
+                    </a>
+                    {% if employee.position == 'admin' %}
+                        <a href="{% url 'shift_log:material_writeoff_list' %}" class="btn btn-success flex-fill text-nowrap">
+                            <i class="bi bi-box-arrow-down"></i> Все списания
                         </a>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 </div>
 {% endblock %}
 

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (ActivityLog, Attachment, Department, Employee,
-                     Notification, Task, TaskReport)
+                     MaterialWriteOff, Notification, Task, TaskReport)
 
 
 @admin.register(Department)
@@ -101,3 +101,5 @@ class ActivityLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+admin.site.register(MaterialWriteOff)

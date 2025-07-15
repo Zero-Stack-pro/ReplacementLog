@@ -2,8 +2,9 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import (Attachment, DailyReport, Department, Employee, Shift,
-                     ShiftLog, ShiftType, Task, TaskReport)
+from .models import (Attachment, DailyReport, Department, Employee,
+                     MaterialWriteOff, Shift, ShiftLog, ShiftType, Task,
+                     TaskReport)
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -466,7 +467,7 @@ class TaskStatusUpdateForm(forms.Form):
                 'При завершении задания обязательно укажите комментарий'
             )
         
-        return cleaned_data
+        return cleaned_data 
 
 
 class DailyReportForm(forms.ModelForm):
@@ -487,3 +488,27 @@ class DailyReportForm(forms.ModelForm):
         labels = {
             'comment': 'Ежедневный отчёт (комментарий)'
         } 
+
+
+class MaterialWriteOffForm(forms.ModelForm):
+    class Meta:
+        model = MaterialWriteOff
+        fields = ['material_name', 'quantity', 'destination', 'department']
+        widgets = {
+            'material_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'destination': forms.TextInput(attrs={'class': 'form-control'}),
+            'department': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and hasattr(user, 'employee'):
+            employee = user.employee
+            if not employee.is_admin:
+                self.fields['department'].widget = forms.HiddenInput()
+                self.fields['department'].initial = employee.department
+                self.fields['department'].queryset = Department.objects.filter(id=employee.department.id)
+            else:
+                self.fields['department'].queryset = Department.objects.all() 

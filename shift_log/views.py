@@ -7,19 +7,22 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.timezone import localdate
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DetailView, ListView, UpdateView,
                                   View)
 
-from .forms import (DailyReportForm, ShiftFilterForm, ShiftForm, ShiftLogForm,
-                    TaskFilterForm, TaskForm, TaskReportForm,
-                    TaskStatusUpdateForm, UserRegistrationForm)
+from .forms import (DailyReportForm, MaterialWriteOffForm, ShiftFilterForm,
+                    ShiftForm, ShiftLogForm, TaskFilterForm, TaskForm,
+                    TaskReportForm, TaskStatusUpdateForm, UserRegistrationForm)
 from .models import (ActivityLog, Attachment, DailyReport, Department,
-                     Employee, Notification, Shift, ShiftLog, Task, TaskReport)
+                     Employee, MaterialWriteOff, Notification, Shift, ShiftLog,
+                     Task, TaskReport)
 from .utils import log_activity, send_notification
 
 
@@ -100,12 +103,20 @@ def dashboard(request):
         is_read=False
     ).order_by('-sent_at')[:5]
 
+    # Получаем списания материалов за сегодня
+    today = localdate()
+    if employee.position == 'admin':
+        writeoffs = MaterialWriteOff.objects.filter(created_at__date=today).select_related('department', 'created_by')
+    else:
+        writeoffs = MaterialWriteOff.objects.filter(department=employee.department, created_at__date=today).select_related('department', 'created_by')
+
     context = {
         'employee': employee,
         'active_tasks': active_tasks,
         'notifications': notifications,
         'daily_report': daily_report,
         'daily_report_form': daily_report_form,
+        'writeoffs': writeoffs,
     }
     return render(
         request,
@@ -322,7 +333,7 @@ class TaskListView(LoginRequiredMixin, ListView):
         return queryset.order_by(
             '-priority',
             '-created_at'
-        )
+                )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1436,3 +1447,92 @@ def daily_reports_list(request):
         'selected_department': request.GET.get('department', ''),
     }
     return render(request, 'shift_log/daily_reports_list.html', context)
+
+
+class MaterialWriteOffListView(LoginRequiredMixin, ListView):
+    model = MaterialWriteOff
+    template_name = 'shift_log/material_writeoff_list.html'
+    context_object_name = 'writeoffs'
+    paginate_by = 20
+
+    def get_queryset(self):
+        user = self.request.user
+        from datetime import timedelta
+
+        from django.utils.timezone import localdate
+        yesterday = localdate() - timedelta(days=1)
+        date_from = self.request.GET.get('date_from', yesterday.strftime('%Y-%m-%d'))
+        date_to = self.request.GET.get('date_to', yesterday.strftime('%Y-%m-%d'))
+        department_id = self.request.GET.get('department')
+        created_by_id = self.request.GET.get('created_by')
+
+        qs = MaterialWriteOff.objects.all().select_related('department', 'created_by')
+        if hasattr(user, 'employee'):
+            employee = user.employee
+            if employee.position == 'admin':
+                # Фильтрация по отделу для админа
+                if department_id:
+                    qs = qs.filter(department_id=department_id)
+            else:
+                # Только свой отдел
+                qs = qs.filter(department=employee.department)
+            # Фильтрация по сотруднику
+            if created_by_id:
+                qs = qs.filter(created_by_id=created_by_id)
+        # Фильтрация по дате
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+        return qs.order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        employee = getattr(user, 'employee', None)
+        # Для фильтрации по отделу и сотруднику
+        if employee and employee.position == 'admin':
+            context['departments'] = Department.objects.all()
+        elif employee:
+            context['departments'] = Department.objects.filter(id=employee.department.id)
+        else:
+            context['departments'] = Department.objects.none()
+        # Список сотрудников для фильтра
+        if employee and employee.position == 'admin':
+            context['employees'] = Employee.objects.all()
+        elif employee:
+            context['employees'] = Employee.objects.filter(department=employee.department)
+        else:
+            context['employees'] = Employee.objects.none()
+        context['employee'] = employee
+        context['date_from'] = self.request.GET.get('date_from', '')
+        context['date_to'] = self.request.GET.get('date_to', '')
+        context['selected_department'] = self.request.GET.get('department', '')
+        context['selected_created_by'] = self.request.GET.get('created_by', '')
+        return context
+
+
+class MaterialWriteOffCreateView(LoginRequiredMixin, CreateView):
+    model = MaterialWriteOff
+    form_class = MaterialWriteOffForm
+    template_name = 'shift_log/material_writeoff_form.html'
+    success_url = reverse_lazy('shift_log:dashboard')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        user = self.request.user
+        if hasattr(user, 'employee'):
+            employee = user.employee
+            form.instance.created_by = employee
+            if not employee.is_admin:
+                form.instance.department = employee.department
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['employee'] = self.request.user.employee
+        return context

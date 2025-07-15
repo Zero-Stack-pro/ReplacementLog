@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Списания материалов{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Списания материалов</h2>
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto">
+            <label for="date_from" class="form-label mb-0">С даты</label>
+            <input type="date" id="date_from" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+        </div>
+        <div class="col-auto">
+            <label for="date_to" class="form-label mb-0">По дату</label>
+            <input type="date" id="date_to" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+        </div>
+        {% if employee.position == 'admin' %}
+        <div class="col-auto">
+            <label for="department" class="form-label mb-0">Отдел</label>
+            <select id="department" name="department" class="form-select">
+                <option value="">Все</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if dept.id|stringformat:'s' == selected_department %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="col-auto">
+            <label for="created_by" class="form-label mb-0">Сотрудник</label>
+            <select id="created_by" name="created_by" class="form-select">
+                <option value="">Все</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if emp.id|stringformat:'s' == selected_created_by %}selected{% endif %}>{{ emp.user.get_full_name|default:emp.user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Показать</button>
+        </div>
+    </form>
+    <div class="mb-3 text-end">
+        <a href="{% url 'shift_log:material_writeoff_create' %}" class="btn btn-success">Добавить списание</a>
+    </div>
+    {% if writeoffs %}
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Что списали</th>
+                <th>Сколько</th>
+                <th>Куда</th>
+                <th>Отдел</th>
+                <th>Кем</th>
+                <th>Дата и время</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in writeoffs %}
+            <tr>
+                <td>{{ w.material_name }}</td>
+                <td>{{ w.quantity }}</td>
+                <td>{{ w.destination }}</td>
+                <td>{{ w.department.name }}</td>
+                <td>{{ w.created_by.user.get_full_name|default:w.created_by.user.username }}</td>
+                <td>{{ w.created_at|date:'d.m.Y H:i' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">Нет списаний за выбранный период.</div>
+    {% endif %}
+</div>
+{% endblock %} 

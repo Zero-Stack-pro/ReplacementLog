@@ -738,3 +738,45 @@ class DailyReport(models.Model):
 
     def __str__(self):
         return f"{self.department} — {self.date}"
+
+
+class MaterialWriteOff(models.Model):
+    """Списание материалов"""
+    material_name = models.CharField(
+        max_length=255,
+        verbose_name="Что списали"
+    )
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Сколько списали"
+    )
+    destination = models.CharField(
+        max_length=255,
+        verbose_name="Куда"
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        verbose_name="Отдел"
+    )
+    created_by = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        verbose_name="Кем списано"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата и время списания"
+    )
+
+    class Meta:
+        verbose_name = "Списание материала"
+        verbose_name_plural = "Списания материалов"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return (
+            f"{self.material_name} ({self.quantity}) для {self.destination} "
+            f"— {self.department.name}"
+        )

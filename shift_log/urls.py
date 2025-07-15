@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
+from .views import MaterialWriteOffCreateView, MaterialWriteOffListView
 
 app_name = 'shift_log'
 
@@ -48,4 +49,9 @@ urlpatterns = [
     # API уведомлений
     path('api/notifications/count/', views.api_notifications_count, name='api_notifications_count'),
     path('api/notifications/recent/', views.api_notifications_recent, name='api_notifications_recent'),
+]
+
+urlpatterns += [
+    path('materials/writeoff/', MaterialWriteOffListView.as_view(), name='material_writeoff_list'),
+    path('materials/writeoff/create/', MaterialWriteOffCreateView.as_view(), name='material_writeoff_create'),
 ] 

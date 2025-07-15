@@ -39,26 +39,20 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'shift_log:task_list' %}">
-                            <i class="bi bi-list-task"></i> Задания
-                        </a>
-                    </li>
+
                     
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'shift_log:reports_list' %}">
-                            <i class="bi bi-clock-history"></i> История изменений
+                            <i class="bi bi-clock-history"></i> История заданий
                         </a>
                     </li>
-                    {% if user.employee.position == 'supervisor' or user.employee.position == 'admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'shift_log:task_create' %}">
-                            <i class="bi bi-plus-circle"></i> Создать задание
+                        <a class="nav-link" href="{% url 'shift_log:material_writeoff_list' %}">
+                            <i class="bi bi-box-arrow-down"></i> История списаний
                         </a>
                     </li>
-                    {% endif %}
                 </ul>
-                
+
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'shift_log:daily_reports_list' %}">
