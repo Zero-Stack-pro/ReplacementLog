@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (ActivityLog, Attachment, Department, Employee,
-                     MaterialWriteOff, Notification, Task, TaskReport)
+                     MaterialWriteOff, Note, Notification, Project,
+                     ProjectTask, Task, TaskReport)
 
 
 @admin.register(Department)
@@ -103,3 +104,6 @@ class ActivityLogAdmin(admin.ModelAdmin):
         return False
 
 admin.site.register(MaterialWriteOff)
+admin.site.register(Project)
+admin.site.register(ProjectTask)
+admin.site.register(Note)

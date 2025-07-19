@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Задача проекта{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if form.instance.pk %}Редактировать задачу{% else %}Добавить задачу{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% if current_project %}
+            <div class="mb-3">
+                <label class="form-label">Проект</label>
+                <div class="form-control bg-light">{{ current_project.name }}</div>
+            </div>
+        {% else %}
+            <div class="mb-3">
+                {{ form.project.label_tag }}
+                {{ form.project }}
+                {% if form.project.errors %}
+                    <div class="text-danger small">{{ form.project.errors }}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="mb-3">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="text-danger small">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="text-danger small">{{ form.description.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.due_date.label_tag }}
+            {{ form.due_date }}
+            {% if form.due_date.errors %}
+                <div class="text-danger small">{{ form.due_date.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.status.label_tag }}
+            {{ form.status }}
+            {% if form.status.errors %}
+                <div class="text-danger small">{{ form.status.errors }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        {% if view.kwargs.project_id %}
+            <a href="{% url 'shift_log:projecttask_list' view.kwargs.project_id %}" class="btn btn-secondary ms-2">Назад к задачам</a>
+        {% else %}
+            <a href="{% url 'shift_log:projecttask_list' form.instance.project.id %}" class="btn btn-secondary ms-2">Назад к задачам</a>
+        {% endif %}
+    </form>
+</div>
+{% endblock %} 

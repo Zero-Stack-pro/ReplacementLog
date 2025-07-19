@@ -3,8 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
 from .models import (Attachment, DailyReport, Department, Employee,
-                     MaterialWriteOff, Shift, ShiftLog, ShiftType, Task,
-                     TaskReport)
+                     MaterialWriteOff, Note, Project, ProjectTask, Shift,
+                     ShiftLog, ShiftType, Task, TaskReport)
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -512,3 +512,49 @@ class MaterialWriteOffForm(forms.ModelForm):
                 self.fields['department'].queryset = Department.objects.filter(id=employee.department.id)
             else:
                 self.fields['department'].queryset = Department.objects.all() 
+
+
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = ['title', 'text']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название заметки'}),
+            'text': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Введите заметку...'}),
+        }
+        labels = {
+            'title': 'Название',
+            'text': 'Текст заметки',
+        }
+
+
+class ProjectTaskForm(forms.ModelForm):
+    class Meta:
+        model = ProjectTask
+        fields = ['project', 'title', 'description', 'due_date', 'status']
+        widgets = {
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'project': 'Проект',
+            'title': 'Название задачи',
+            'description': 'Описание',
+            'due_date': 'Время исполнения',
+            'status': 'Статус',
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        project_instance = kwargs.pop('project_instance', None)
+        super().__init__(*args, **kwargs)
+        if user and hasattr(user, 'employee'):
+            self.fields['project'].queryset = user.employee.projects.all()
+        else:
+            self.fields['project'].queryset = Project.objects.none()
+        if project_instance:
+            self.fields['project'].initial = project_instance
+            self.fields['project'].widget = forms.HiddenInput() 

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Удалить заметку{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Удалить заметку</h2>
+    <div class="alert alert-warning">Вы уверены, что хотите удалить эту заметку?</div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Удалить</button>
+        <a href="{% url 'shift_log:note_list' %}" class="btn btn-secondary ms-2">Отмена</a>
+    </form>
+</div>
+{% endblock %} 

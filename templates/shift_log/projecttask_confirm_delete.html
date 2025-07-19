@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Удалить задачу{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Удалить задачу</h2>
+    <div class="alert alert-warning">Вы уверены, что хотите удалить эту задачу?</div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Удалить</button>
+        <a href="{% url 'shift_log:projecttask_list' object.project.id %}" class="btn btn-secondary ms-2">Отмена</a>
+    </form>
+</div>
+{% endblock %} 

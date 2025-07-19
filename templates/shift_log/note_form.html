@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Заметка{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if form.instance.pk %}Редактировать заметку{% else %}Добавить заметку{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="text-danger small">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.text.label_tag }}
+            {{ form.text }}
+            {% if form.text.errors %}
+                <div class="text-danger small">{{ form.text.errors }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'shift_log:note_list' %}" class="btn btn-secondary ms-2">Назад к списку</a>
+    </form>
+</div>
+{% endblock %} 
