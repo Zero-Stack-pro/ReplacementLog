@@ -433,17 +433,31 @@ function initTooltips() {
     });
 }
 
-// Автообновление
 function initAutoRefresh() {
-    // Автообновление каждые 5 минут на страницах со списками
+    // Автообновление каждые 5 минут (300000 мс), если пользователь не активен
     if (window.location.pathname.includes('/shifts/') || window.location.pathname.includes('/tasks/')) {
+        let lastActivityTime = Date.now();
+
+        // Обновляем метку времени при любой активности
+        const activityEvents = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+        activityEvents.forEach(event => {
+            document.addEventListener(event, () => {
+                lastActivityTime = Date.now();
+            });
+        });
+
         setInterval(function () {
-            if (!document.hidden) {
+            const now = Date.now();
+            const inactiveTime = now - lastActivityTime;
+
+            // Проверяем, что вкладка активна и пользователь был неактивен как минимум 5 минут
+            if (!document.hidden && inactiveTime >= 300000) {
                 location.reload();
             }
-        }, 300000); // 5 минут
+        }, 60000); // Проверяем каждую минуту
     }
 }
+
 
 // Утилиты
 function getCSRFToken() {
