@@ -780,3 +780,58 @@ class MaterialWriteOff(models.Model):
             f"{self.material_name} ({self.quantity}) для {self.destination} "
             f"— {self.department.name}"
         )
+
+
+class Project(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='projects', verbose_name='Сотрудник')
+    name = models.CharField(max_length=100, verbose_name='Название проекта')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+
+    class Meta:
+        verbose_name = 'Проект'
+        verbose_name_plural = 'Проекты'
+        unique_together = ('employee', 'name')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Note(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='notes', verbose_name='Сотрудник')
+    title = models.CharField(max_length=200, verbose_name='Название', blank=True, default='')
+    text = models.TextField(verbose_name='Текст заметки')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+
+    class Meta:
+        verbose_name = 'Заметка'
+        verbose_name_plural = 'Заметки'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Заметка {self.employee.user.get_full_name()} ({self.created_at:%d.%m.%Y})"
+
+
+class ProjectTask(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новая'),
+        ('in_progress', 'В работе'),
+        ('done', 'Завершена'),
+    ]
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', verbose_name='Проект')
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='project_tasks', verbose_name='Сотрудник')
+    title = models.CharField(max_length=200, verbose_name='Название задачи')
+    description = models.TextField(blank=True, verbose_name='Описание')
+    due_date = models.DateTimeField(null=True, blank=True, verbose_name='Время исполнения')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name='Статус')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+
+    class Meta:
+        verbose_name = 'Задача проекта'
+        verbose_name_plural = 'Задачи проектов'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_status_display()})"

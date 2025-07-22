@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Задачи проекта{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Задачи проекта: {{ project.name }}</h2>
+    <div class="mb-3 text-end">
+        <a href="{% url 'shift_log:projecttask_create' project.id %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Добавить задачу
+        </a>
+        <a href="{% url 'shift_log:project_list' %}" class="btn btn-secondary ms-2">К проектам</a>
+    </div>
+    {% if tasks %}
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Статус</th>
+                <th>Создано</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description|default:'—' }}</td>
+                <td>{{ task.get_status_display }}</td>
+                <td>{{ task.created_at|date:'d.m.Y H:i' }}</td>
+                <td>
+                    <a href="{% url 'shift_log:projecttask_edit' task.id %}" class="btn btn-outline-primary btn-sm" title="Редактировать"><i class="bi bi-pencil"></i></a>
+                    <a href="{% url 'shift_log:projecttask_delete' task.id %}" class="btn btn-outline-danger btn-sm" title="Удалить"><i class="bi bi-trash"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">Нет задач в этом проекте.</div>
+    {% endif %}
+</div>
+{% endblock %} 

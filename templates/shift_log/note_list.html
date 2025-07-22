@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Мои заметки{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Мои заметки</h2>
+    <div class="mb-3 text-end">
+        <a href="{% url 'shift_log:note_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Добавить заметку
+        </a>
+    </div>
+    {% if notes %}
+    <div class="list-group">
+        {% for note in notes %}
+        <div class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="fw-bold">{{ note.title }}</div>
+                <div class="mb-1 text-muted small">Обновлено: {{ note.updated_at|date:'d.m.Y H:i' }}</div>
+                <div>{{ note.text|linebreaksbr }}</div>
+            </div>
+            <div class="ms-3 d-flex flex-column gap-1">
+                <a href="{% url 'shift_log:note_edit' note.pk %}" class="btn btn-outline-primary btn-sm" title="Редактировать"><i class="bi bi-pencil"></i></a>
+                <a href="{% url 'shift_log:note_delete' note.pk %}" class="btn btn-outline-danger btn-sm" title="Удалить"><i class="bi bi-trash"></i></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">У вас пока нет заметок.</div>
+    {% endif %}
+</div>
+{% endblock %} 

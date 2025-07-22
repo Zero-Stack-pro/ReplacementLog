@@ -2,7 +2,12 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
-from .views import MaterialWriteOffCreateView, MaterialWriteOffListView
+from .views import (MaterialWriteOffCreateView, MaterialWriteOffListView,
+                    NoteCreateView, NoteDeleteView, NoteListView,
+                    NoteUpdateView, ProjectCreateView, ProjectDeleteView,
+                    ProjectListView, ProjectTaskCreateView,
+                    ProjectTaskDeleteView, ProjectTaskListView,
+                    ProjectTaskUpdateView, ProjectUpdateView)
 
 app_name = 'shift_log'
 
@@ -54,4 +59,22 @@ urlpatterns = [
 urlpatterns += [
     path('materials/writeoff/', MaterialWriteOffListView.as_view(), name='material_writeoff_list'),
     path('materials/writeoff/create/', MaterialWriteOffCreateView.as_view(), name='material_writeoff_create'),
+] 
+
+urlpatterns += [
+    path('notes/', NoteListView.as_view(), name='note_list'),
+    path('notes/create/', NoteCreateView.as_view(), name='note_create'),
+    path('notes/<int:pk>/edit/', NoteUpdateView.as_view(), name='note_edit'),
+    path('notes/<int:pk>/delete/', NoteDeleteView.as_view(), name='note_delete'),
+] 
+
+urlpatterns += [
+    path('projects/', ProjectListView.as_view(), name='project_list'),
+    path('projects/create/', ProjectCreateView.as_view(), name='project_create'),
+    path('projects/<int:pk>/edit/', ProjectUpdateView.as_view(), name='project_edit'),
+    path('projects/<int:pk>/delete/', ProjectDeleteView.as_view(), name='project_delete'),
+    path('projects/<int:project_id>/tasks/', ProjectTaskListView.as_view(), name='projecttask_list'),
+    path('projects/<int:project_id>/tasks/create/', ProjectTaskCreateView.as_view(), name='projecttask_create'),
+    path('projecttasks/<int:pk>/edit/', ProjectTaskUpdateView.as_view(), name='projecttask_edit'),
+    path('projecttasks/<int:pk>/delete/', ProjectTaskDeleteView.as_view(), name='projecttask_delete'),
 ] 

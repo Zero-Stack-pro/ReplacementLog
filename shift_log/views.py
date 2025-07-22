@@ -10,19 +10,20 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.timezone import localdate
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import (CreateView, DetailView, ListView, UpdateView,
-                                  View)
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  UpdateView, View)
 
-from .forms import (DailyReportForm, MaterialWriteOffForm, ShiftFilterForm,
-                    ShiftForm, ShiftLogForm, TaskFilterForm, TaskForm,
-                    TaskReportForm, TaskStatusUpdateForm, UserRegistrationForm)
+from .forms import (DailyReportForm, MaterialWriteOffForm, NoteForm,
+                    ProjectTaskForm, ShiftFilterForm, ShiftForm, ShiftLogForm,
+                    TaskFilterForm, TaskForm, TaskReportForm,
+                    TaskStatusUpdateForm, UserRegistrationForm)
 from .models import (ActivityLog, Attachment, DailyReport, Department,
-                     Employee, MaterialWriteOff, Notification, Shift, ShiftLog,
-                     Task, TaskReport)
+                     Employee, MaterialWriteOff, Note, Notification, Project,
+                     ProjectTask, Shift, ShiftLog, Task, TaskReport)
 from .utils import log_activity, send_notification
 
 
@@ -292,8 +293,7 @@ class TaskListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = Task.objects.select_related(
             'department', 'assigned_to', 'created_by'
-        )
-        queryset = queryset.exclude(
+        ).exclude(
             status__in=['completed', 'cancelled']
         )
         # Фильтрация по правам доступа
@@ -1536,3 +1536,204 @@ class MaterialWriteOffCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['employee'] = self.request.user.employee
         return context
+
+
+class NoteListView(LoginRequiredMixin, ListView):
+    model = Note
+    template_name = 'shift_log/note_list.html'
+    context_object_name = 'notes'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Note.objects.filter(employee=self.request.user.employee).order_by('-updated_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['employee'] = self.request.user.employee
+        return context
+
+class NoteCreateView(LoginRequiredMixin, CreateView):
+    model = Note
+    form_class = NoteForm
+    template_name = 'shift_log/note_form.html'
+    success_url = reverse_lazy('shift_log:note_list')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.employee = self.request.user.employee
+        messages.success(self.request, 'Заметка успешно добавлена!')
+        return super().form_valid(form)
+
+class NoteUpdateView(LoginRequiredMixin, UpdateView):
+    model = Note
+    form_class = NoteForm
+    template_name = 'shift_log/note_form.html'
+    success_url = reverse_lazy('shift_log:note_list')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        return kwargs
+
+    def get_queryset(self):
+        return Note.objects.filter(employee=self.request.user.employee)
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Заметка обновлена!')
+        return super().form_valid(form)
+
+class NoteDeleteView(LoginRequiredMixin, DeleteView):
+    model = Note
+    template_name = 'shift_log/note_confirm_delete.html'
+    success_url = reverse_lazy('shift_log:note_list')
+
+    def get_queryset(self):
+        return Note.objects.filter(employee=self.request.user.employee)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Заметка удалена!')
+        return super().delete(request, *args, **kwargs)
+
+class ProjectListView(LoginRequiredMixin, ListView):
+    model = Project
+    template_name = 'shift_log/project_list.html'
+    context_object_name = 'projects'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Project.objects.filter(employee=self.request.user.employee).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        from django.utils import timezone
+        context = super().get_context_data(**kwargs)
+        context['employee'] = self.request.user.employee
+        # Для каждого проекта — незавершённые задачи
+        projects = context['projects']
+        project_tasks = {}
+        project_status_color = {}
+        now = timezone.now()
+        for project in projects:
+            tasks = project.tasks.filter(status__in=['new', 'in_progress'])
+            project_tasks[project.id] = tasks
+            # Цветовая политика:
+            # danger — есть просроченные (in_progress/new и due_date < now)
+            # warning — есть в работе (in_progress)
+            # info — есть только новые (new)
+            # success — нет незавершённых задач
+            overdue = tasks.filter(due_date__lt=now, status__in=['new', 'in_progress']).exists()
+            in_progress = tasks.filter(status='in_progress').exists()
+            only_new = tasks.filter(status='new').exists() and not in_progress and not overdue
+            if overdue:
+                color = 'danger'
+            elif in_progress:
+                color = 'warning'
+            elif only_new:
+                color = 'info'
+            else:
+                color = 'success'
+            project_status_color[project.id] = color
+        context['project_tasks'] = project_tasks
+        context['project_status_color'] = project_status_color
+        return context
+
+class ProjectCreateView(LoginRequiredMixin, CreateView):
+    model = Project
+    fields = ['name']
+    template_name = 'shift_log/project_form.html'
+    success_url = reverse_lazy('shift_log:project_list')
+
+    def form_valid(self, form):
+        form.instance.employee = self.request.user.employee
+        return super().form_valid(form)
+
+class ProjectUpdateView(LoginRequiredMixin, UpdateView):
+    model = Project
+    fields = ['name']
+    template_name = 'shift_log/project_form.html'
+    success_url = reverse_lazy('shift_log:project_list')
+
+    def get_queryset(self):
+        return Project.objects.filter(employee=self.request.user.employee)
+
+class ProjectDeleteView(LoginRequiredMixin, DeleteView):
+    model = Project
+    template_name = 'shift_log/project_confirm_delete.html'
+    success_url = reverse_lazy('shift_log:project_list')
+
+    def get_queryset(self):
+        return Project.objects.filter(employee=self.request.user.employee)
+
+class ProjectTaskListView(LoginRequiredMixin, ListView):
+    model = ProjectTask
+    template_name = 'shift_log/projecttask_list.html'
+    context_object_name = 'tasks'
+    paginate_by = 20
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return ProjectTask.objects.filter(project__id=project_id, employee=self.request.user.employee).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = get_object_or_404(Project, id=self.kwargs.get('project_id'), employee=self.request.user.employee)
+        context['project'] = project
+        context['employee'] = self.request.user.employee
+        return context
+
+class ProjectTaskCreateView(LoginRequiredMixin, CreateView):
+    model = ProjectTask
+    form_class = ProjectTaskForm
+    template_name = 'shift_log/projecttask_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        project_id = self.kwargs.get('project_id')
+        if project_id:
+            project = get_object_or_404(Project, id=project_id, employee=self.request.user.employee)
+            kwargs['project_instance'] = project
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project_id = self.kwargs.get('project_id')
+        if project_id:
+            context['current_project'] = get_object_or_404(Project, id=project_id, employee=self.request.user.employee)
+        return context
+
+    def form_valid(self, form):
+        form.instance.employee = self.request.user.employee
+        project_id = self.kwargs.get('project_id')
+        form.instance.project = get_object_or_404(Project, id=project_id, employee=self.request.user.employee)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('shift_log:project_list')
+
+class ProjectTaskUpdateView(LoginRequiredMixin, UpdateView):
+    model = ProjectTask
+    form_class = ProjectTaskForm
+    template_name = 'shift_log/projecttask_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def get_queryset(self):
+        return ProjectTask.objects.filter(employee=self.request.user.employee)
+
+    def get_success_url(self):
+        return reverse('shift_log:projecttask_list', kwargs={'project_id': self.object.project.id})
+
+class ProjectTaskDeleteView(LoginRequiredMixin, DeleteView):
+    model = ProjectTask
+    template_name = 'shift_log/projecttask_confirm_delete.html'
+
+    def get_queryset(self):
+        return ProjectTask.objects.filter(employee=self.request.user.employee)
+
+    def get_success_url(self):
+        return reverse('shift_log:projecttask_list', kwargs={'project_id': self.object.project.id})
