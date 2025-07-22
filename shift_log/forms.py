@@ -526,8 +526,6 @@ class NoteForm(forms.ModelForm):
             'title': 'Название',
             'text': 'Текст заметки',
         }
-
-
 class ProjectTaskForm(forms.ModelForm):
     class Meta:
         model = ProjectTask
@@ -546,15 +544,25 @@ class ProjectTaskForm(forms.ModelForm):
             'due_date': 'Время исполнения',
             'status': 'Статус',
         }
-
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        project_instance = kwargs.pop('project_instance', None)
-        super().__init__(*args, **kwargs)
-        if user and hasattr(user, 'employee'):
-            self.fields['project'].queryset = user.employee.projects.all()
-        else:
-            self.fields['project'].queryset = Project.objects.none()
-        if project_instance:
-            self.fields['project'].initial = project_instance
-            self.fields['project'].widget = forms.HiddenInput() 
+            self.user = kwargs.pop('user', None)
+            self.project_instance = kwargs.pop('project_instance', None)
+            super().__init__(*args, **kwargs)
+
+            if self.user and hasattr(self.user, 'employee'):
+                self.fields['project'].queryset = self.user.employee.projects.all()
+            else:
+                self.fields['project'].queryset = Project.objects.none()
+
+            if self.project_instance:
+                self.fields['project'].widget = forms.HiddenInput()
+                # ⚠️ Не только initial, но и НЕ рассчитывай на передачу этого поля в POST!
+                self.fields['project'].required = False  # иначе Django будет ругаться
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.project_instance:
+            instance.project = self.project_instance  # вот здесь назначаем точно
+        if commit:
+            instance.save()
+        return instance
