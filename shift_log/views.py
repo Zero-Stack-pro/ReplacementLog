@@ -1530,6 +1530,7 @@ class MaterialWriteOffCreateView(LoginRequiredMixin, CreateView):
             form.instance.created_by = employee
             if not employee.is_admin:
                 form.instance.department = employee.department
+        print("🧪 cleaned_data:", form.cleaned_data)
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):

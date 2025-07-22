@@ -493,10 +493,11 @@ class DailyReportForm(forms.ModelForm):
 class MaterialWriteOffForm(forms.ModelForm):
     class Meta:
         model = MaterialWriteOff
-        fields = ['material_name', 'quantity', 'destination', 'department']
+        fields = ['material_name', 'quantity', 'unit', 'destination', 'department']
         widgets = {
             'material_name': forms.TextInput(attrs={'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'unit': forms.Select(attrs={'class': 'form-control'}),
             'destination': forms.TextInput(attrs={'class': 'form-control'}),
             'department': forms.Select(attrs={'class': 'form-control'}),
         }

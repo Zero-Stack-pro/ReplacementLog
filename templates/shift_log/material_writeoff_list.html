@@ -45,6 +45,7 @@
             <tr>
                 <th>Что списали</th>
                 <th>Сколько</th>
+                <th>Ед.изм</th>
                 <th>Куда</th>
                 <th>Отдел</th>
                 <th>Кем</th>
@@ -56,6 +57,7 @@
             <tr>
                 <td>{{ w.material_name }}</td>
                 <td>{{ w.quantity }}</td>
+                <td>{{ w.get_unit_display }}</td>
                 <td>{{ w.destination }}</td>
                 <td>{{ w.department.name }}</td>
                 <td>{{ w.created_by.user.get_full_name|default:w.created_by.user.username }}</td>

@@ -19,6 +19,14 @@
                 <div class="text-danger small">{{ form.quantity.errors }}</div>
             {% endif %}
         </div>
+
+        <div class="mb-3">
+            <label for="{{ form.unit.id_for_label }}">Ед. изм.</label>
+            {{ form.unit }}            
+            {% if form.unit.errors %}
+                <div class="text-danger small">{{ form.unit.errors }}</div>
+            {% endif %}
+        </div>
         <div class="mb-3">
             {{ form.destination.label_tag }}
             {{ form.destination }}

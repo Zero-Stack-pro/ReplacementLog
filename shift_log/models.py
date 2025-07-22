@@ -739,7 +739,10 @@ class DailyReport(models.Model):
     def __str__(self):
         return f"{self.department} — {self.date}"
 
-
+UNIT_CHOICES = [
+    ('m', 'м'),
+    ('pcs', 'шт'),
+] 
 class MaterialWriteOff(models.Model):
     """Списание материалов"""
     material_name = models.CharField(
@@ -751,6 +754,9 @@ class MaterialWriteOff(models.Model):
         decimal_places=2,
         verbose_name="Сколько списали"
     )
+    
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='pcs')
+    
     destination = models.CharField(
         max_length=255,
         verbose_name="Куда"
