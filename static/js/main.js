@@ -1,6 +1,7 @@
 // Основной JavaScript файл для системы сменного журнала
 
 console.log('main.js загружен, jQuery доступен:', typeof $ !== 'undefined');
+console.log('Текущий путь:', window.location.pathname);
 
 $(document).ready(function () {
     console.log('DOM загружен, инициализация компонентов...');
@@ -435,11 +436,27 @@ function initTooltips() {
 
 function initAutoRefresh() {
     // Автообновление каждые 5 минут (300000 мс), если пользователь не активен
-    if (window.location.pathname.includes('/shifts/') || window.location.pathname.includes('/tasks/')) {
+    // Исключаем страницы с формами, чтобы не мешать пользователю
+    const currentPath = window.location.pathname;
+
+    const isFormPage = currentPath.includes('/create/') ||
+        currentPath.includes('/edit/') ||
+        currentPath.includes('/form/') ||
+        currentPath.includes('/add/');
+
+    const shouldAutoRefresh = (currentPath.includes('/shifts/') || currentPath.includes('/tasks/') ||
+        currentPath.includes('/projects/') || currentPath.includes('/notes/') ||
+        currentPath.includes('/materials/') || currentPath === '/');
+
+    if ((currentPath.includes('/shifts/') || currentPath.includes('/tasks/') ||
+        currentPath.includes('/projects/') || currentPath.includes('/notes/') ||
+        currentPath.includes('/materials/') || currentPath === '/') && !isFormPage) {
+        console.log('🔄 Автообновление включено (5 мин. неактивности)');
         let lastActivityTime = Date.now();
 
         // Обновляем метку времени при любой активности
         const activityEvents = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+
         activityEvents.forEach(event => {
             document.addEventListener(event, () => {
                 lastActivityTime = Date.now();
@@ -449,9 +466,15 @@ function initAutoRefresh() {
         setInterval(function () {
             const now = Date.now();
             const inactiveTime = now - lastActivityTime;
+            const remainingTime = 300000 - inactiveTime;
+            const minutesLeft = Math.ceil(remainingTime / 60000);
+
+            // Выводим информацию в консоль каждую минуту
+            console.log(`🕐 Автообновление: ${minutesLeft} мин. до перезагрузки (неактивность: ${Math.round(inactiveTime / 1000)} сек.)`);
 
             // Проверяем, что вкладка активна и пользователь был неактивен как минимум 5 минут
             if (!document.hidden && inactiveTime >= 300000) {
+                console.log('🔄 Автообновление страницы из-за неактивности');
                 location.reload();
             }
         }, 60000); // Проверяем каждую минуту
@@ -596,22 +619,22 @@ function initThemeToggle() {
     }
 
     // Обработчик клика по переключателю темы
-    $('#themeToggle').click(function() {
+    $('#themeToggle').click(function () {
         var currentTheme = document.documentElement.getAttribute('data-theme');
         var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
+
         // Применяем новую тему
         document.documentElement.setAttribute('data-theme', newTheme);
-        
+
         // Сохраняем в localStorage
         localStorage.setItem('theme', newTheme);
-        
+
         // Обновляем иконку
         updateThemeIcon(newTheme);
-        
+
         // Добавляем анимацию перехода
         $('body').addClass('theme-transition');
-        setTimeout(function() {
+        setTimeout(function () {
             $('body').removeClass('theme-transition');
         }, 300);
     });

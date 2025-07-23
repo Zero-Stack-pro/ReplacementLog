@@ -557,13 +557,17 @@ class ProjectTaskForm(forms.ModelForm):
 
             if self.project_instance:
                 self.fields['project'].widget = forms.HiddenInput()
-                # ⚠️ Не только initial, но и НЕ рассчитывай на передачу этого поля в POST!
-                self.fields['project'].required = False  # иначе Django будет ругаться
+                self.fields['project'].required = False
+                self.fields['project'].initial = self.project_instance.id
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self.project_instance:
-            instance.project = self.project_instance  # вот здесь назначаем точно
+            instance.project = self.project_instance
         if commit:
             instance.save()
         return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data

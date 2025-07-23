@@ -48,10 +48,10 @@
             {% endif %}
         </div>
         {% if form.errors %}
-  <div class="alert alert-danger">
-    {{ form.errors }}
-  </div>
-{% endif %}
+            <div class="alert alert-danger">
+                {{ form.errors }}
+            </div>
+        {% endif %}
         <button type="submit" class="btn btn-primary">Сохранить</button>
         {% if view.kwargs.project_id %}
             <a href="{% url 'shift_log:projecttask_list' view.kwargs.project_id %}" class="btn btn-secondary ms-2">Назад к задачам</a>

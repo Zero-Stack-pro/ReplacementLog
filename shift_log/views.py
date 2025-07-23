@@ -1711,7 +1711,8 @@ class ProjectTaskCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('shift_log:project_list')
+        project_id = self.kwargs.get('project_id')
+        return reverse('shift_log:projecttask_list', kwargs={'project_id': project_id})
 
 class ProjectTaskUpdateView(LoginRequiredMixin, UpdateView):
     model = ProjectTask
