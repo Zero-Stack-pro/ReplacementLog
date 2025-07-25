@@ -17,9 +17,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   UpdateView, View)
 
-from .forms import (DailyReportForm, MaterialWriteOffForm, NoteForm,
-                    ProjectTaskForm, ShiftFilterForm, ShiftForm, ShiftLogForm,
-                    TaskFilterForm, TaskForm, TaskReportForm,
+from .forms import (AttachmentForm, DailyReportForm, MaterialWriteOffForm,
+                    NoteForm, ProjectTaskForm, ShiftFilterForm, ShiftForm,
+                    ShiftLogForm, TaskFilterForm, TaskForm, TaskReportForm,
                     TaskStatusUpdateForm, UserRegistrationForm)
 from .models import (ActivityLog, Attachment, DailyReport, Department,
                      Employee, MaterialWriteOff, Note, Notification, Project,
@@ -639,28 +639,44 @@ def task_report_create(request, task_id):
 @login_required
 def upload_attachment(request):
     """Загрузка вложения"""
+    print(f"DEBUG: upload_attachment called with method={request.method}")
+    print(f"DEBUG: FILES={request.FILES}")
+    print(f"DEBUG: POST={request.POST}")
+    
     if request.method == 'POST':
         form = AttachmentForm(request.POST, request.FILES)
+        print(f"DEBUG: form.is_valid()={form.is_valid()}")
+        print(f"DEBUG: form.errors={form.errors}")
+        
         if form.is_valid():
-            attachment = form.save(commit=False)
-            attachment.uploaded_by = request.user.employee
-            attachment.filename = request.FILES['file'].name
-            attachment.content_type = request.FILES['file'].content_type
-            attachment.file_size = request.FILES['file'].size
-            
-            # Получаем тип вложения и ID объекта из POST данных
-            attachment.attachment_type = request.POST.get('attachment_type', 'task')
-            attachment.object_id = request.POST.get('object_id')
-            
-            attachment.save()
-            
-            return JsonResponse({
-                'success': True,
-                'attachment_id': attachment.id,
-                'filename': attachment.filename,
-                'file_size': attachment.file_size,
-                'uploaded_by': attachment.uploaded_by.user.get_full_name() or attachment.uploaded_by.user.username
-            })
+            try:
+                attachment = form.save(commit=False)
+                attachment.uploaded_by = request.user.employee
+                attachment.filename = request.FILES['file'].name
+                attachment.content_type = request.FILES['file'].content_type
+                attachment.file_size = request.FILES['file'].size
+                
+                # Получаем тип вложения и ID объекта из POST данных
+                attachment.attachment_type = request.POST.get('attachment_type', 'task')
+                attachment.object_id = request.POST.get('object_id')
+                
+                print(f"DEBUG: Saving attachment with filename={attachment.filename}, size={attachment.file_size}")
+                attachment.save()
+                print(f"DEBUG: Attachment saved with ID={attachment.id}")
+                
+                return JsonResponse({
+                    'success': True,
+                    'attachment_id': attachment.id,
+                    'filename': attachment.filename,
+                    'file_size': attachment.file_size,
+                    'uploaded_by': attachment.uploaded_by.user.get_full_name() or attachment.uploaded_by.user.username
+                })
+            except Exception as e:
+                print(f"DEBUG: Error saving attachment: {e}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error saving attachment: {str(e)}'
+                })
         else:
             return JsonResponse({
                 'success': False,

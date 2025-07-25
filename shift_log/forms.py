@@ -313,9 +313,9 @@ class AttachmentForm(forms.ModelForm):
     def clean_file(self):
         file = self.cleaned_data.get('file')
         if file:
-            # Проверяем размер файла (10MB)
-            if file.size > 10 * 1024 * 1024:
-                raise forms.ValidationError('Размер файла не должен превышать 10MB')
+            # Проверяем размер файла (50MB)
+            if file.size > 50 * 1024 * 1024:
+                raise forms.ValidationError('Размер файла не должен превышать 50MB')
             
             # Проверяем тип файла
             allowed_types = [
