@@ -45,6 +45,13 @@ class Employee(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.department.name}"
 
+    def get_full_name(self):
+        """Возвращает полное имя сотрудника"""
+        full_name = self.user.get_full_name()
+        if full_name:
+            return full_name
+        return self.user.username
+
     @property
     def is_supervisor(self):
         return self.position in ['supervisor', 'admin']
@@ -159,7 +166,11 @@ class Employee(models.Model):
                 is_active=True
             )
         else:
-            return Employee.objects.none()
+            # Обычные сотрудники могут назначать задачи только себе
+            return Employee.objects.filter(
+                id=self.id,
+                is_active=True
+            )
     
     def get_position_display_name(self):
         """Возвращает читаемое название должности"""

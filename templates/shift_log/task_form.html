@@ -24,6 +24,11 @@
                         </div>
                     {% endif %}
                     
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Обязательные поля:</strong> Название задания, Тип задачи, Отдел, Назначить на, Приоритет, Срок выполнения, Описание
+                    </div>
+                    
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.title.id_for_label }}" class="form-label">
@@ -199,7 +204,7 @@
                         <a href="{% url 'shift_log:task_list' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Назад к списку
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-secondary" id="submitBtn" disabled>
                             <i class="bi bi-check-circle"></i>
                             {% if form.instance.pk %}Сохранить изменения{% else %}Создать задание{% endif %}
                         </button>
@@ -216,9 +221,139 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Форма задания загружена');
     
+    // Получаем форму
+    var form = document.querySelector('form');
+    var submitButton = form.querySelector('button[type="submit"]');
+    
+    // Функция для проверки валидности формы
+    function validateForm() {
+        var isValid = true;
+        var requiredFields = form.querySelectorAll('[required]');
+        
+        // Убираем все предыдущие ошибки
+        form.querySelectorAll('.is-invalid').forEach(function(field) {
+            field.classList.remove('is-invalid');
+        });
+        
+        // Проверяем каждое обязательное поле
+        requiredFields.forEach(function(field) {
+            var value = field.value.trim();
+            var isEmpty = false;
+            
+            // Проверяем тип поля
+            if (field.tagName === 'SELECT') {
+                isEmpty = value === '' || value === null;
+            } else if (field.tagName === 'TEXTAREA') {
+                isEmpty = value === '';
+            } else {
+                isEmpty = value === '';
+            }
+            
+            if (isEmpty) {
+                field.classList.add('is-invalid');
+                isValid = false;
+                
+                // Показываем сообщение об ошибке
+                var feedback = field.parentNode.querySelector('.invalid-feedback');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    field.parentNode.appendChild(feedback);
+                }
+                feedback.textContent = 'Это поле обязательно для заполнения';
+            }
+        });
+        
+        // Обновляем состояние кнопки
+        submitButton.disabled = !isValid;
+        if (isValid) {
+            submitButton.classList.remove('btn-secondary');
+            submitButton.classList.add('btn-primary');
+        } else {
+            submitButton.classList.remove('btn-primary');
+            submitButton.classList.add('btn-secondary');
+        }
+        
+        return isValid;
+    }
+    
+    // Добавляем обработчики событий для валидации
+    form.querySelectorAll('input, select, textarea').forEach(function(field) {
+        field.addEventListener('input', validateForm);
+        field.addEventListener('change', validateForm);
+        field.addEventListener('blur', validateForm);
+    });
+    
+    // Обработчик отправки формы
+    form.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            alert('Пожалуйста, заполните все обязательные поля');
+            return false;
+        }
+    });
+    
+    // Инициализируем валидацию при загрузке
+    validateForm();
+    
     // Получаем элементы формы
     var departmentSelect = document.getElementById('{{ form.department.id_for_label }}');
     var assignedToSelect = document.getElementById('{{ form.assigned_to.id_for_label }}');
+    
+    // Функция для загрузки сотрудников по отделу
+    function loadEmployeesByDepartment(departmentId) {
+        if (!departmentId) {
+            assignedToSelect.innerHTML = '<option value="">Сначала выберите отдел</option>';
+            return;
+        }
+        
+        // Сохраняем текущее выбранное значение
+        var currentSelectedValue = assignedToSelect.value;
+        console.log('Сохраняем текущее значение:', currentSelectedValue);
+        
+        // Очищаем список сотрудников
+        assignedToSelect.innerHTML = '<option value="">Загрузка сотрудников...</option>';
+        
+        // Загружаем сотрудников для выбранного отдела
+        fetch('/api/get-employees-by-department/?department_id=' + departmentId)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Получены сотрудники:', data);
+                
+                // Очищаем список
+                assignedToSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+                
+                // Добавляем сотрудников
+                if (data.employees && data.employees.length > 0) {
+                    data.employees.forEach(function(employee) {
+                        var option = document.createElement('option');
+                        option.value = employee.id;
+                        option.textContent = employee.name;
+                        assignedToSelect.appendChild(option);
+                    });
+                    
+                    // Восстанавливаем выбранное значение, если оно есть в новом списке
+                    if (currentSelectedValue) {
+                        var optionToSelect = assignedToSelect.querySelector('option[value="' + currentSelectedValue + '"]');
+                        if (optionToSelect) {
+                            optionToSelect.selected = true;
+                            console.log('Восстановлено выбранное значение:', currentSelectedValue);
+                        } else {
+                            console.log('Выбранное значение не найдено в новом списке:', currentSelectedValue);
+                        }
+                    }
+                } else {
+                    var option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Нет доступных сотрудников';
+                    assignedToSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке сотрудников:', error);
+                assignedToSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            });
+    }
     
     // Проверяем, есть ли поле отдела (только для администраторов)
     if (departmentSelect) {
@@ -228,43 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         departmentSelect.addEventListener('change', function() {
             var departmentId = this.value;
             console.log('Отдел изменен на:', departmentId);
-            
-            if (departmentId) {
-                // Очищаем список сотрудников
-                assignedToSelect.innerHTML = '<option value="">Загрузка сотрудников...</option>';
-                
-                // Загружаем сотрудников для выбранного отдела
-                fetch('/api/get-employees-by-department/?department_id=' + departmentId)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Получены сотрудники:', data);
-                        
-                        // Очищаем список
-                        assignedToSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
-                        
-                        // Добавляем сотрудников
-                        if (data.employees && data.employees.length > 0) {
-                            data.employees.forEach(function(employee) {
-                                var option = document.createElement('option');
-                                option.value = employee.id;
-                                option.textContent = employee.name;
-                                assignedToSelect.appendChild(option);
-                            });
-                        } else {
-                            var option = document.createElement('option');
-                            option.value = '';
-                            option.textContent = 'Нет доступных сотрудников';
-                            assignedToSelect.appendChild(option);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Ошибка при загрузке сотрудников:', error);
-                        assignedToSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
-                    });
-            } else {
-                // Если отдел не выбран, очищаем список сотрудников
-                assignedToSelect.innerHTML = '<option value="">Сначала выберите отдел</option>';
-            }
+            loadEmployeesByDepartment(departmentId);
         });
         
         // Если отдел уже выбран при загрузке страницы, загружаем сотрудников
@@ -273,6 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } else {
         console.log('Поле отдела не найдено (не администратор)');
+        
+        // Для не-администраторов загружаем сотрудников для их отдела при загрузке страницы
+        var userDepartmentId = '{{ user.employee.department.id }}';
+        if (userDepartmentId) {
+            console.log('Загружаем сотрудников для отдела пользователя:', userDepartmentId);
+            
+            // Проверяем, есть ли уже выбранный сотрудник
+            var currentSelectedValue = assignedToSelect.value;
+            if (currentSelectedValue) {
+                console.log('Уже есть выбранный сотрудник, не перезагружаем список');
+                return;
+            }
+            
+            loadEmployeesByDepartment(userDepartmentId);
+        }
     }
 });
 </script>

@@ -66,7 +66,7 @@
                                         <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
                                     </div>
                                     <small class="text-muted d-block">
-                                        <strong>Исполнитель:</strong> {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                        <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
                                     </small>
                                     <small class="text-muted d-block">
                                         <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}
@@ -98,7 +98,7 @@
                                     {% endif %}
                                 </div>
                                 <small class="text-muted d-block">
-                                    <strong>Исполнитель:</strong> {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                    <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
                                 </small>
                                 <small class="text-muted d-block">
                                     <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}

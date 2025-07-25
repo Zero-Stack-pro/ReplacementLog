@@ -146,10 +146,12 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if task.priority == 'high' %}
-                                                <span class="badge bg-danger">Высокий</span>
-                                            {% elif task.priority == 'medium' %}
-                                                <span class="badge bg-warning">Средний</span>
+                                            {% if task.priority == 4 %}
+                                                <span class="badge bg-danger">Критический</span>
+                                            {% elif task.priority == 3 %}
+                                                <span class="badge bg-warning">Высокий</span>
+                                            {% elif task.priority == 2 %}
+                                                <span class="badge bg-info">Средний</span>
                                             {% else %}
                                                 <span class="badge bg-success">Низкий</span>
                                             {% endif %}
@@ -222,16 +224,18 @@
                                     <td>{{ task.department.name }}</td>
                                     <td>
                                         {% if task.assigned_to %}
-                                            {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                                            {{ task.assigned_to.get_full_name }}
                                         {% else %}
                                             <span class="text-muted">Не назначен</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if task.priority == 'high' %}
-                                            <span class="badge bg-danger">Высокий</span>
-                                        {% elif task.priority == 'medium' %}
-                                            <span class="badge bg-warning">Средний</span>
+                                        {% if task.priority == 4 %}
+                                            <span class="badge bg-danger">Критический</span>
+                                        {% elif task.priority == 3 %}
+                                            <span class="badge bg-warning">Высокий</span>
+                                        {% elif task.priority == 2 %}
+                                            <span class="badge bg-info">Средний</span>
                                         {% else %}
                                             <span class="badge bg-success">Низкий</span>
                                         {% endif %}

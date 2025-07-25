@@ -217,7 +217,7 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-medium small">{{ task.assigned_to.user.get_full_name|truncatechars:15 }}</div>
+                                                    <div class="fw-medium small">{{ task.assigned_to.get_full_name|truncatechars:15 }}</div>
                                                     <small class="text-muted">{{ task.assigned_to.get_position_display_name }}</small>
                                                 </div>
                                             </div>
@@ -229,9 +229,15 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ task.priority|yesno:'danger,warning,info,success' }}">
-                                                {{ task.get_priority_display }}
-                                            </span>
+                                            {% if task.priority == 4 %}
+                                                <span class="badge bg-danger">{{ task.get_priority_display }}</span>
+                                            {% elif task.priority == 3 %}
+                                                <span class="badge bg-warning">{{ task.get_priority_display }}</span>
+                                            {% elif task.priority == 2 %}
+                                                <span class="badge bg-info">{{ task.get_priority_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-success">{{ task.get_priority_display }}</span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <div class="text-center">

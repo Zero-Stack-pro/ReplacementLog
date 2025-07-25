@@ -203,16 +203,17 @@ class TaskForm(forms.ModelForm):
             # Ограничиваем выбор сотрудников для назначения
             if not employee.is_admin:
                 if employee.is_supervisor:
+                    # Руководители могут назначать задачи сотрудникам своего отдела
                     self.fields['assigned_to'].queryset = Employee.objects.filter(
                         department=employee.department,
-                        is_active=True,
-                        position__in=[r for r, lvl in role_order.items() if lvl <= my_level]
-                    )
+                        is_active=True
+                    ).select_related('user', 'department').order_by('user__first_name', 'user__last_name')
                 else:
+                    # Обычные сотрудники могут назначать задачи только себе
                     self.fields['assigned_to'].queryset = Employee.objects.filter(
                         id=employee.id,
                         is_active=True
-                    )
+                    ).select_related('user', 'department')
             else:
                 # Для администраторов определяем отдел из данных формы
                 dept = None
@@ -228,7 +229,7 @@ class TaskForm(forms.ModelForm):
                 if not dept and self.initial.get('department'):
                     dept = self.initial.get('department')
                 
-                # Если нет в initial, проверяем instance
+                # Если нет в initial, проверяем instance (для редактирования)
                 if not dept and self.instance and self.instance.pk:
                     dept = self.instance.department
                 
@@ -237,12 +238,12 @@ class TaskForm(forms.ModelForm):
                     self.fields['assigned_to'].queryset = Employee.objects.filter(
                         department=dept,
                         is_active=True
-                    )
+                    ).select_related('user', 'department').order_by('user__first_name', 'user__last_name')
                 else:
                     # Если отдел не определен, показываем всех сотрудников
                     self.fields['assigned_to'].queryset = Employee.objects.filter(
                         is_active=True
-                    )
+                    ).select_related('user', 'department').order_by('user__first_name', 'user__last_name')
 
     def clean(self):
         cleaned_data = super().clean()

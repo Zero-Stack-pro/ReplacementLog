@@ -534,6 +534,10 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
+        if hasattr(self.request.user, 'employee'):
+            employee = self.request.user.employee
+            context['available_departments'] = employee.get_available_departments_for_tasks()
+            context['available_employees'] = employee.get_available_employees_for_assignments()
         return context
 
 
