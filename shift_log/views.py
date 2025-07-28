@@ -1159,6 +1159,83 @@ def delete_attachment(request, attachment_id):
 
 
 @login_required
+def view_attachment(request, attachment_id):
+    """Просмотр вложения в браузере"""
+    try:
+        attachment = get_object_or_404(Attachment, id=attachment_id)
+        
+        # Проверяем права доступа
+        if not hasattr(request.user, 'employee'):
+            return JsonResponse({'success': False, 'error': 'Unauthorized'})
+        
+        employee = request.user.employee
+        
+        # Администраторы могут просматривать любые вложения
+        if employee.position == 'admin':
+            pass
+        # Руководители могут просматривать вложения заданий своего отдела
+        elif employee.position == 'supervisor':
+            if attachment.attachment_type == 'task':
+                task = get_object_or_404(Task, id=attachment.object_id)
+                if task.department != employee.department:
+                    return JsonResponse({'success': False, 'error': 'Access denied'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Access denied'})
+        # Обычные сотрудники могут просматривать вложения заданий, к которым у них есть доступ
+        elif employee.position == 'employee':
+            if attachment.attachment_type == 'task':
+                task = get_object_or_404(Task, id=attachment.object_id)
+                if task.assigned_to != employee and task.created_by != employee:
+                    return JsonResponse({'success': False, 'error': 'Access denied'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Access denied'})
+        else:
+            return JsonResponse({'success': False, 'error': 'Access denied'})
+        
+        # Определяем, можно ли отобразить файл в браузере
+        viewable_types = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp',
+            'application/pdf',
+            'text/plain', 'text/html', 'text/css', 'text/javascript',
+            'application/json', 'application/xml'
+        ]
+        
+        # Проверяем существование файла
+        if not attachment.file or not attachment.file.storage.exists(attachment.file.name):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Файл не найден на сервере'
+            })
+        
+        # Отправляем файл
+        try:
+            with open(attachment.file.path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type=attachment.content_type)
+                
+                if attachment.content_type in viewable_types:
+                    # Для просматриваемых файлов - отображаем в браузере
+                    response['Content-Disposition'] = f'inline; filename="{attachment.filename}"'
+                else:
+                    # Для остальных файлов - скачиваем
+                    response['Content-Disposition'] = f'attachment; filename="{attachment.filename}"'
+                
+                return response
+        except FileNotFoundError:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Файл не найден на сервере'
+            })
+        except PermissionError:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Нет прав доступа к файлу'
+            })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
 def download_attachment(request, attachment_id):
     """Скачивание вложения"""
     try:
@@ -1192,11 +1269,29 @@ def download_attachment(request, attachment_id):
         else:
             return JsonResponse({'success': False, 'error': 'Access denied'})
         
-        # Отправляем файл
-        with open(attachment.file.path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type=attachment.content_type)
-            response['Content-Disposition'] = f'attachment; filename="{attachment.filename}"'
-            return response
+        # Проверяем существование файла
+        if not attachment.file or not attachment.file.storage.exists(attachment.file.name):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Файл не найден на сервере'
+            })
+        
+        # Отправляем файл для скачивания
+        try:
+            with open(attachment.file.path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type=attachment.content_type)
+                response['Content-Disposition'] = f'attachment; filename="{attachment.filename}"'
+                return response
+        except FileNotFoundError:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Файл не найден на сервере'
+            })
+        except PermissionError:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Нет прав доступа к файлу'
+            })
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})

@@ -42,6 +42,7 @@ urlpatterns = [
     path('api/tasks/<int:task_id>/history/', views.api_task_history, name='api_task_history'),
     path('api/upload-attachment/', views.upload_attachment, name='upload_attachment'),
     path('attachments/<int:attachment_id>/delete/', views.delete_attachment, name='delete_attachment'),
+    path('attachments/<int:attachment_id>/view/', views.view_attachment, name='view_attachment'),
     path('attachments/<int:attachment_id>/download/', views.download_attachment, name='download_attachment'),
 
     path('api/get-employees-by-department/', views.get_employees_by_department, name='get_employees_by_department'),

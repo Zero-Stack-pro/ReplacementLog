@@ -241,33 +241,35 @@
                 
                 <!-- Список вложений -->
                 <div id="attachmentsList" class="attachments-list">
-                    {% if task.attachments.all %}
-                        {% for attachment in task.attachments.all %}
+    
+                    {% if attachments %}
+                        {% for attachment in attachments %}
                         <div class="attachment-item" data-attachment-id="{{ attachment.id }}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="attachment-info">
-                                    <div class="attachment-icon">
-                                        <i class="bi bi-file-earmark"></i>
-                                    </div>
-                                    <div class="attachment-details">
-                                        <a href="{% url 'shift_log:download_attachment' attachment.id %}" target="_blank" class="attachment-name">
-                                            {{ attachment.filename }}
-                                        </a>
-                                        <div class="attachment-meta">
-                                            {{ attachment.file_size|filesizeformat }} • 
-                                            {{ attachment.uploaded_at|date:"d.m.Y H:i" }} • 
-                                            {{ attachment.uploaded_by.user.get_full_name|default:attachment.uploaded_by.user.username }}
-                                        </div>
-                                    </div>
+                            <div class="attachment-info">
+                                <div class="attachment-icon">
+                                    <i class="bi {{ attachment.get_file_icon }}"></i>
                                 </div>
-                                <div class="attachment-actions">
-                                    <a href="{% url 'shift_log:download_attachment' attachment.id %}" target="_blank" class="btn btn-outline-primary" title="Просмотр">
-                                        <i class="bi bi-eye"></i>
+                                <div class="attachment-details">
+                                    <a href="{% url 'shift_log:view_attachment' attachment.id %}" target="_blank" class="attachment-name">
+                                        {{ attachment.filename }}
                                     </a>
-                                    <button class="btn btn-outline-danger delete-attachment" data-attachment-id="{{ attachment.id }}" title="Удалить">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <div class="attachment-meta">
+                                        {{ attachment.file_size|filesizeformat }} • 
+                                        {{ attachment.uploaded_at|date:"d.m.Y H:i" }} • 
+                                        {{ attachment.uploaded_by.user.get_full_name|default:attachment.uploaded_by.user.username }}
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <a href="{% url 'shift_log:view_attachment' attachment.id %}" target="_blank" class="btn btn-outline-primary" title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'shift_log:download_attachment' attachment.id %}" target="_blank" class="btn btn-outline-secondary" title="Скачать">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <button class="btn btn-outline-danger delete-attachment" data-attachment-id="{{ attachment.id }}" title="Удалить">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
@@ -335,6 +337,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('attachmentsList:', attachmentsList);
     console.log('fileUploadArea:', fileUploadArea);
     console.log('uploadBtn:', uploadBtn);
+    
+
     
     // Drag and drop functionality
     if (fileUploadArea) {
@@ -567,8 +571,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Обработка удаления вложений
+    // Обработка ошибок при просмотре/скачивании вложений
     document.addEventListener('click', function(e) {
+        if (e.target.closest('a[href*="/attachments/"]')) {
+            e.preventDefault();
+            
+            const link = e.target.closest('a[href*="/attachments/"]');
+            const url = link.href;
+            
+            // Проверяем, что это ссылка на вложение
+            if (url.includes('/attachments/') && url.includes('/view/')) {
+                // Для просмотра файлов - открываем в новой вкладке
+                window.open(url, '_blank');
+            } else if (url.includes('/attachments/') && url.includes('/download/')) {
+                // Для скачивания файлов - создаем временную ссылку
+                const tempLink = document.createElement('a');
+                tempLink.href = url;
+                tempLink.download = '';
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+            }
+        }
+        
         if (e.target.closest('.delete-attachment')) {
             e.preventDefault();
             
@@ -611,34 +636,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Функция для определения иконки файла
+    function getFileIcon(filename) {
+        const extension = filename.split('.').pop().toLowerCase();
+        
+        // Изображения
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+            return 'bi-image';
+        }
+        
+        // PDF
+        if (extension === 'pdf') {
+            return 'bi-file-pdf';
+        }
+        
+        // Документы Word
+        if (['doc', 'docx'].includes(extension)) {
+            return 'bi-file-word';
+        }
+        
+        // Текстовые файлы
+        if (['txt', 'html', 'css', 'js'].includes(extension)) {
+            return 'bi-file-text';
+        }
+        
+        // Архивы
+        if (['zip', 'rar'].includes(extension)) {
+            return 'bi-file-zip';
+        }
+        
+        // JSON и XML
+        if (['json', 'xml'].includes(extension)) {
+            return 'bi-file-code';
+        }
+        
+        // По умолчанию
+        return 'bi-file-earmark';
+    }
+    
     // Функция для добавления вложения в список
     function addAttachmentToList(attachmentId, filename, fileSize, uploadedBy) {
+        const fileIcon = getFileIcon(filename);
         const attachmentHtml = `
             <div class="attachment-item" data-attachment-id="${attachmentId}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="attachment-info">
-                        <div class="attachment-icon">
-                            <i class="bi bi-file-earmark"></i>
-                        </div>
-                        <div class="attachment-details">
-                            <a href="/attachments/${attachmentId}/download/" target="_blank" class="attachment-name">
-                                ${filename}
-                            </a>
-                            <div class="attachment-meta">
-                                ${fileSize} • 
-                                ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})} • 
-                                ${uploadedBy}
-                            </div>
-                        </div>
+                <div class="attachment-info">
+                    <div class="attachment-icon">
+                        <i class="bi ${fileIcon}"></i>
                     </div>
-                    <div class="attachment-actions">
-                        <a href="/attachments/${attachmentId}/download/" target="_blank" class="btn btn-outline-primary" title="Просмотр">
-                            <i class="bi bi-eye"></i>
+                    <div class="attachment-details">
+                        <a href="/attachments/${attachmentId}/view/" target="_blank" class="attachment-name">
+                            ${filename}
                         </a>
-                        <button class="btn btn-outline-danger delete-attachment" data-attachment-id="${attachmentId}" title="Удалить">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <div class="attachment-meta">
+                            ${fileSize} • 
+                            ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})} • 
+                            ${uploadedBy}
+                        </div>
                     </div>
+                </div>
+                <div class="attachment-actions">
+                    <a href="/attachments/${attachmentId}/view/" target="_blank" class="btn btn-outline-primary" title="Просмотр">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="/attachments/${attachmentId}/download/" target="_blank" class="btn btn-outline-secondary" title="Скачать">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    <button class="btn btn-outline-danger delete-attachment" data-attachment-id="${attachmentId}" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
             </div>
         `;

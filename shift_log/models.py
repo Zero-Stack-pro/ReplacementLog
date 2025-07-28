@@ -608,6 +608,48 @@ class Attachment(models.Model):
     def __str__(self):
         return self.filename
 
+    def get_file_icon(self):
+        """Возвращает иконку для типа файла"""
+        content_type = self.content_type.lower()
+        
+        # Изображения
+        if content_type.startswith('image/'):
+            return 'bi-image'
+        
+        # PDF
+        elif content_type == 'application/pdf':
+            return 'bi-file-pdf'
+        
+        # Документы Word
+        elif content_type in ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
+            return 'bi-file-word'
+        
+        # Текстовые файлы
+        elif content_type.startswith('text/'):
+            return 'bi-file-text'
+        
+        # Архивы
+        elif content_type in ['application/zip', 'application/x-rar-compressed']:
+            return 'bi-file-zip'
+        
+        # JSON и XML
+        elif content_type in ['application/json', 'application/xml']:
+            return 'bi-file-code'
+        
+        # По умолчанию
+        else:
+            return 'bi-file-earmark'
+
+    def is_viewable_in_browser(self):
+        """Проверяет, можно ли отобразить файл в браузере"""
+        viewable_types = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp',
+            'application/pdf',
+            'text/plain', 'text/html', 'text/css', 'text/javascript',
+            'application/json', 'application/xml'
+        ]
+        return self.content_type.lower() in viewable_types
+
 
 class Notification(models.Model):
     """Модель уведомления"""

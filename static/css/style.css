@@ -4,16 +4,22 @@
 :root {
     /* Основная цветовая палитра */
     --primary-color: #6366f1;
+    --primary-rgb: 99, 102, 241;
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     --secondary-color: #ec4899;
+    --secondary-rgb: 236, 72, 153;
     --secondary-gradient: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
     --success-color: #10b981;
+    --success-rgb: 16, 185, 129;
     --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
     --warning-color: #f59e0b;
+    --warning-rgb: 245, 158, 11;
     --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
     --danger-color: #ef4444;
+    --danger-rgb: 239, 68, 68;
     --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
     --info-color: #06b6d4;
+    --info-rgb: 6, 182, 212;
     --info-gradient: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
     
     /* Светлая тема */
@@ -1626,6 +1632,7 @@ footer .text-muted {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin-bottom: 0.75rem;
 }
 
 .attachment-item .attachment-icon {
@@ -1672,7 +1679,9 @@ footer .text-muted {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-shrink: 0;
+    justify-content: flex-start;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
 }
 
 .attachment-item .btn {
@@ -1687,27 +1696,43 @@ footer .text-muted {
 
 .attachment-item .btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .attachment-item .btn-outline-primary {
     border-color: var(--primary-color);
     color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.05);
 }
 
 .attachment-item .btn-outline-primary:hover {
     background: var(--primary-color);
     color: white;
+    border-color: var(--primary-color);
+}
+
+.attachment-item .btn-outline-secondary {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+    background: rgba(var(--secondary-rgb), 0.05);
+}
+
+.attachment-item .btn-outline-secondary:hover {
+    background: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
 }
 
 .attachment-item .btn-outline-danger {
     border-color: var(--danger-color);
     color: var(--danger-color);
+    background: rgba(var(--danger-rgb), 0.05);
 }
 
 .attachment-item .btn-outline-danger:hover {
     background: var(--danger-color);
     color: white;
+    border-color: var(--danger-color);
 }
 
 /* Анимации для вложений */
@@ -1741,7 +1766,8 @@ footer .text-muted {
     
     .attachment-item .attachment-actions {
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: 0.5rem;
     }
     
     .attachment-item .btn {
@@ -1761,13 +1787,48 @@ footer .text-muted {
 }
 
 [data-theme="dark"] .attachment-item .btn {
-    background: var(--bg-glass);
-    border-color: var(--border-glass);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
     color: var(--text-primary);
 }
 
 [data-theme="dark"] .attachment-item .btn:hover {
-    background: var(--bg-glass-hover);
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-primary {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-primary:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-secondary {
+    background: rgba(var(--secondary-rgb), 0.1);
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-secondary:hover {
+    background: var(--secondary-color);
+    color: white;
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-danger {
+    background: rgba(var(--danger-rgb), 0.1);
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+[data-theme="dark"] .attachment-item .btn-outline-danger:hover {
+    background: var(--danger-color);
+    color: white;
 }
 
 /* Минимальные исправления для модальных окон */
