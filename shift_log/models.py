@@ -464,6 +464,7 @@ class Task(models.Model):
         ('support', 'Поддержка'),
         ('emergency', 'Экстренная'),
         ('routine', 'Рутинная'),
+        ('other_damage', 'Прочая поломка'),
     ]
 
     title = models.CharField(max_length=200, verbose_name="Название")
