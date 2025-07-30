@@ -44,6 +44,25 @@
                 
                 <div class="row">
                     <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Тип назначения:</label>
+                        <p>
+                            {% if task.task_scope == 'general' %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-people"></i> Общая задача
+                                </span>
+                                <br><small class="text-muted">Видна всем сотрудникам отдела</small>
+                            {% else %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person"></i> Индивидуальная задача
+                                </span>
+                                <br><small class="text-muted">Назначена конкретному сотруднику</small>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Отдел:</label>
                         <p>{{ task.department.name }}</p>
                     </div>

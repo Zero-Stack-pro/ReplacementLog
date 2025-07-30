@@ -67,6 +67,31 @@
                                 </div>
                             {% endif %}
                         </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.task_scope.id_for_label }}" class="form-label">
+                                Тип назначения <span class="text-danger">*</span>
+                            </label>
+                            <select name="{{ form.task_scope.name }}" 
+                                    class="form-control {% if form.task_scope.errors %}is-invalid{% endif %}"
+                                    id="{{ form.task_scope.id_for_label }}" required>
+                                {% for value, label in form.task_scope.field.choices %}
+                                    <option value="{{ value }}" {% if form.task_scope.value == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.task_scope.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.task_scope.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> 
+                                <strong>Индивидуальная:</strong> назначается конкретному сотруднику<br>
+                                <strong>Общая:</strong> видна всем сотрудникам отдела
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="row">
@@ -295,6 +320,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализируем валидацию при загрузке
     validateForm();
+    
+    // Функция для переключения поля assigned_to в зависимости от типа назначения
+    function toggleAssignedToField() {
+        var taskScopeSelect = document.getElementById('{{ form.task_scope.id_for_label }}');
+        var assignedToField = document.getElementById('{{ form.assigned_to.id_for_label }}');
+        var assignedToLabel = assignedToField.parentNode.querySelector('label');
+        
+        if (taskScopeSelect.value === 'general') {
+            // Для общих задач - скрываем поле assigned_to
+            assignedToField.parentNode.style.display = 'none';
+            assignedToField.required = false;
+            assignedToField.value = '';
+        } else {
+            // Для индивидуальных задач - показываем поле assigned_to
+            assignedToField.parentNode.style.display = 'block';
+            assignedToField.required = true;
+        }
+        
+        // Перезапускаем валидацию
+        validateForm();
+    }
+    
+    // Добавляем обработчик изменения типа назначения
+    var taskScopeSelect = document.getElementById('{{ form.task_scope.id_for_label }}');
+    if (taskScopeSelect) {
+        taskScopeSelect.addEventListener('change', toggleAssignedToField);
+        // Инициализируем состояние при загрузке
+        toggleAssignedToField();
+    }
     
     // Получаем элементы формы
     var departmentSelect = document.getElementById('{{ form.department.id_for_label }}');

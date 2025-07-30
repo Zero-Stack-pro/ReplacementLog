@@ -467,16 +467,22 @@ class Task(models.Model):
         ('other_damage', 'Прочая поломка'),
     ]
 
+    TASK_SCOPE_CHOICES = [
+        ('individual', 'Индивидуальная'),
+        ('general', 'Общая'),
+    ]
+
     title = models.CharField(max_length=200, verbose_name="Название")
     description = models.TextField(verbose_name="Описание")
     comment = models.TextField(blank=True, verbose_name="Комментарий к заданию")
     department = models.ForeignKey(Department, on_delete=models.CASCADE, verbose_name="Отдел")
-    assigned_to = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Назначен на")
+    assigned_to = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Назначен на", null=True, blank=True)
     created_by = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='created_tasks', verbose_name="Создано")
     
     priority = models.IntegerField(choices=PRIORITY_CHOICES, default=2, verbose_name="Приоритет")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Статус")
     task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='routine', verbose_name="Тип задачи")
+    task_scope = models.CharField(max_length=20, choices=TASK_SCOPE_CHOICES, default='individual', verbose_name="Тип назначения")
     
     due_date = models.DateTimeField(verbose_name="Срок выполнения")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата завершения")
@@ -501,6 +507,11 @@ class Task(models.Model):
         """Возвращает цвет для приоритета задания"""
         from .utils import get_priority_color
         return get_priority_color(self.priority)
+    
+    @property
+    def is_general_task(self):
+        """Проверяет, является ли задача общей"""
+        return self.task_scope == 'general'
     
     def get_related_notifications(self):
         """Возвращает уведомления, связанные с этой задачей"""

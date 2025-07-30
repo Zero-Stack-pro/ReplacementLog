@@ -171,7 +171,7 @@ class TaskForm(forms.ModelForm):
         model = Task
         fields = [
             'title', 'description', 'comment', 'department', 'assigned_to',
-            'priority', 'task_type', 'due_date'
+            'priority', 'task_type', 'task_scope', 'due_date'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -244,6 +244,15 @@ class TaskForm(forms.ModelForm):
                     self.fields['assigned_to'].queryset = Employee.objects.filter(
                         is_active=True
                     ).select_related('user', 'department').order_by('user__first_name', 'user__last_name')
+            
+            # Добавляем JavaScript для динамического изменения поля assigned_to
+            self.fields['task_scope'].widget.attrs.update({
+                'class': 'form-select',
+                'onchange': 'toggleAssignedToField()'
+            })
+            
+            # Делаем поле assigned_to необязательным для общих задач
+            self.fields['assigned_to'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
@@ -257,26 +266,38 @@ class TaskForm(forms.ModelForm):
                 cleaned_data['department'] = employee.department
             department = cleaned_data.get('department')
             assigned_to = cleaned_data.get('assigned_to')
+            task_scope = cleaned_data.get('task_scope', 'individual')
+            
             if department and not employee.can_create_tasks_for_department(department):
                 raise forms.ValidationError(
                     'У вас нет прав для создания задач в этом отделе'
                 )
-            if assigned_to and not employee.is_admin:
-                if not employee.can_assign_tasks_to_employee(assigned_to):
+            
+            # Для общих задач assigned_to не требуется
+            if task_scope == 'general':
+                cleaned_data['assigned_to'] = None
+            else:
+                # Для индивидуальных задач проверяем assigned_to
+                if not assigned_to:
                     raise forms.ValidationError(
-                        'У вас нет прав для назначения задач этому сотруднику'
+                        'Для индивидуальных задач необходимо указать исполнителя'
                     )
-                # Проверяем, что сотрудник равного или ниже статуса
-                assignee_level = role_order.get(getattr(assigned_to, 'position', 'employee'), 1)
-                if assignee_level > my_level:
-                    raise forms.ValidationError(
-                        'Вы не можете назначить задачу сотруднику с более высокой ролью.'
-                    )
-            if employee.is_admin and assigned_to and department:
-                if assigned_to.department != department:
-                    raise forms.ValidationError(
-                        'Сотрудник должен принадлежать выбранному отделу.'
-                    )
+                if assigned_to and not employee.is_admin:
+                    if not employee.can_assign_tasks_to_employee(assigned_to):
+                        raise forms.ValidationError(
+                            'У вас нет прав для назначения задач этому сотруднику'
+                        )
+                    # Проверяем, что сотрудник равного или ниже статуса
+                    assignee_level = role_order.get(getattr(assigned_to, 'position', 'employee'), 1)
+                    if assignee_level > my_level:
+                        raise forms.ValidationError(
+                            'Вы не можете назначить задачу сотруднику с более высокой ролью.'
+                        )
+                if employee.is_admin and assigned_to and department:
+                    if assigned_to.department != department:
+                        raise forms.ValidationError(
+                            'Сотрудник должен принадлежать выбранному отделу.'
+                        )
         return cleaned_data
 
 

@@ -92,8 +92,10 @@ def dashboard(request):
             'department', 'assigned_to', 'assigned_to__user'
         )
     else:
+        # Обычные сотрудники видят свои задачи и общие задачи отдела
         active_tasks = Task.objects.filter(
-            assigned_to=employee,
+            Q(assigned_to=employee) | 
+            Q(department=employee.department, task_scope='general'),
             status__in=['pending', 'in_progress']
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
@@ -300,7 +302,11 @@ class TaskListView(LoginRequiredMixin, ListView):
         if hasattr(self.request.user, 'employee'):
             employee = self.request.user.employee
             if employee.position == 'employee':
-                queryset = queryset.filter(assigned_to=employee)
+                # Обычные сотрудники видят свои задачи и общие задачи отдела
+                queryset = queryset.filter(
+                    Q(assigned_to=employee) | 
+                    Q(department=employee.department, task_scope='general')
+                )
             elif employee.position == 'supervisor':
                 queryset = queryset.filter(department=employee.department)
         # Применяем фильтры
@@ -354,10 +360,18 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         # Проверяем права доступа
         if hasattr(self.request.user, 'employee'):
             employee = self.request.user.employee
-            if (employee.position == 'employee' and 
-                task.assigned_to != employee):
-                messages.error(self.request, 'У вас нет доступа к этому заданию')
-                return context
+            
+            # Для общих задач - доступ есть у всех сотрудников отдела
+            if task.task_scope == 'general':
+                if task.department != employee.department:
+                    messages.error(self.request, 'У вас нет доступа к этому заданию')
+                    return context
+            else:
+                # Для индивидуальных задач - доступ только у назначенного сотрудника
+                if (employee.position == 'employee' and 
+                    task.assigned_to != employee):
+                    messages.error(self.request, 'У вас нет доступа к этому заданию')
+                    return context
 
         # Получаем отчеты по заданию
         reports = TaskReport.objects.filter(task=task).select_related(
@@ -418,9 +432,12 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         if employee.position == 'supervisor' and task.department == employee.department:
             return True
         
-        # Обычные сотрудники могут изменять статус только своих заданий
-        if employee.position == 'employee' and task.assigned_to == employee:
-            return True
+        # Обычные сотрудники могут изменять статус своих заданий или общих задач отдела
+        if employee.position == 'employee':
+            if task.task_scope == 'general' and task.department == employee.department:
+                return True
+            elif task.assigned_to == employee:
+                return True
         
         return False
 
@@ -460,13 +477,28 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             str(form.instance)
         )
         
-        # Отправляем уведомление
-        send_notification(
-            form.instance.assigned_to,
-            'task_assigned',
-            f'Новое задание: {form.instance.title}',
-            f'Вам назначено новое задание "{form.instance.title}"'
-        )
+        # Отправляем уведомление только для индивидуальных задач
+        if form.instance.task_scope == 'individual' and form.instance.assigned_to:
+            send_notification(
+                form.instance.assigned_to,
+                'task_assigned',
+                f'Новое задание: {form.instance.title}',
+                f'Вам назначено новое задание "{form.instance.title}"'
+            )
+        elif form.instance.task_scope == 'general':
+            # Для общих задач отправляем уведомления всем сотрудникам отдела
+            employees = Employee.objects.filter(
+                department=form.instance.department,
+                is_active=True
+            ).exclude(id=form.instance.created_by.id)
+            
+            for employee in employees:
+                send_notification(
+                    employee,
+                    'task_assigned',
+                    f'Новая общая задача: {form.instance.title}',
+                    f'Создана новая общая задача "{form.instance.title}" в отделе {form.instance.department.name}'
+                )
         
         messages.success(self.request, 'Задание успешно создано')
         return response
@@ -1056,9 +1088,12 @@ class TaskStatusUpdateView(LoginRequiredMixin, View):
         if employee.position == 'supervisor' and task.department == employee.department:
             return True
         
-        # Обычные сотрудники могут изменять статус только своих заданий
-        if employee.position == 'employee' and task.assigned_to == employee:
-            return True
+        # Обычные сотрудники могут изменять статус своих заданий или общих задач отдела
+        if employee.position == 'employee':
+            if task.task_scope == 'general' and task.department == employee.department:
+                return True
+            elif task.assigned_to == employee:
+                return True
         
         return False
 
