@@ -120,6 +120,7 @@ def dashboard(request):
         'daily_report': daily_report,
         'daily_report_form': daily_report_form,
         'writeoffs': writeoffs,
+        'today': timezone.localdate(),
     }
     return render(
         request,

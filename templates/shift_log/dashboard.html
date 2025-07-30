@@ -43,6 +43,14 @@
                         Мои активные задания
                     {% endif %}
                 </h5>
+                <!-- Легенда для цветового выделения -->
+                <div class="task-legend mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i> Просроченные
+                        <span class="ms-3"><i class="bi bi-clock-fill text-warning"></i> На сегодня</span>
+                        <span class="ms-3"><i class="bi bi-circle-fill text-muted"></i> Обычные</span>
+                    </small>
+                </div>
             </div>
             <div class="card-body">
                 {% if is_admin_view and tasks_by_department %}
@@ -58,9 +66,16 @@
                         
                         <div class="tasks-grid">
                             {% for task in dept_tasks %}
-                            <div class="task-item">
+                            <div class="task-item {% if task.is_overdue %}task-overdue{% elif task.due_date.date == today %}task-today{% endif %}">
                                 <div class="task-content">
-                                    <h6>{{ task.title }}</h6>
+                                    <h6>
+                                        {% if task.is_overdue %}
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                                        {% elif task.due_date.date == today %}
+                                            <i class="bi bi-clock-fill text-warning me-2"></i>
+                                        {% endif %}
+                                        {{ task.title }}
+                                    </h6>
                                     <div class="mb-2">
                                         <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                         <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
@@ -69,7 +84,10 @@
                                         <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
                                     </small>
                                     <small class="text-muted d-block">
-                                        <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}
+                                        <strong>Срок:</strong> 
+                                        <span class="{% if task.is_overdue %}text-danger fw-bold{% elif task.due_date.date == today %}text-warning fw-bold{% endif %}">
+                                            {{ task.due_date|date:"d.m.Y H:i" }}
+                                        </span>
                                     </small>
                                 </div>
                                 <div class="task-actions">
@@ -87,9 +105,16 @@
                     <!-- Обычное отображение для остальных пользователей -->
                     <div class="tasks-grid">
                         {% for task in active_tasks %}
-                        <div class="task-item">
+                        <div class="task-item {% if task.is_overdue %}task-overdue{% elif task.due_date.date == today %}task-today{% endif %}">
                             <div class="task-content">
-                                <h6>{{ task.title }}</h6>
+                                <h6>
+                                    {% if task.is_overdue %}
+                                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                                    {% elif task.due_date.date == today %}
+                                        <i class="bi bi-clock-fill text-warning me-2"></i>
+                                    {% endif %}
+                                    {{ task.title }}
+                                </h6>
                                 <div class="mb-2">
                                     <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                     <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
@@ -101,7 +126,10 @@
                                     <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
                                 </small>
                                 <small class="text-muted d-block">
-                                    <strong>Срок:</strong> {{ task.due_date|date:"d.m.Y H:i" }}
+                                    <strong>Срок:</strong> 
+                                    <span class="{% if task.is_overdue %}text-danger fw-bold{% elif task.due_date.date == today %}text-warning fw-bold{% endif %}">
+                                        {{ task.due_date|date:"d.m.Y H:i" }}
+                                    </span>
                                 </small>
                             </div>
                             <div class="task-actions">

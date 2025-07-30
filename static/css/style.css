@@ -2186,3 +2186,94 @@ hr {
     margin-top: 0.2rem;
     font-weight: 400;
 } 
+
+/* Стили для выделения задач в дашборде */
+.task-overdue {
+    border: 2px solid var(--danger-color) !important;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+}
+
+.task-overdue::before {
+    background: linear-gradient(135deg, var(--danger-color) 0%, #f87171 100%) !important;
+}
+
+.task-overdue:hover {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+
+.task-today {
+    border: 2px solid var(--warning-color) !important;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2) !important;
+}
+
+.task-today::before {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #fbbf24 100%) !important;
+}
+
+.task-today:hover {
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Анимация для привлечения внимания к просроченным задачам */
+@keyframes pulse-overdue {
+    0% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    100% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+}
+
+.task-overdue {
+    animation: pulse-overdue 2s infinite;
+}
+
+/* Анимация для задач на сегодня */
+@keyframes pulse-today {
+    0% {
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+    100% {
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+}
+
+.task-today {
+    animation: pulse-today 3s infinite;
+} 
+
+/* Стили для легенды задач */
+.task-legend {
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.5rem;
+}
+
+.task-legend small {
+    font-size: 0.8rem;
+}
+
+.task-legend i {
+    margin-right: 0.25rem;
+}
+
+/* Адаптивность для легенды */
+@media (max-width: 768px) {
+    .task-legend {
+        text-align: center;
+    }
+    
+    .task-legend span {
+        display: block;
+        margin-top: 0.25rem;
+    }
+} 
