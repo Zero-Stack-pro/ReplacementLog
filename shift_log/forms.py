@@ -1,3 +1,5 @@
+import mimetypes
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -339,14 +341,43 @@ class AttachmentForm(forms.ModelForm):
             if file.size > 50 * 1024 * 1024:
                 raise forms.ValidationError('Размер файла не должен превышать 50MB')
             
-            # Проверяем тип файла
+            # Проверяем тип файла более гибко
             allowed_types = [
                 'image/jpeg', 'image/png', 'image/gif', 'application/pdf',
                 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'text/plain', 'application/zip', 'application/x-rar-compressed'
             ]
-            if file.content_type not in allowed_types:
-                raise forms.ValidationError('Неподдерживаемый тип файла')
+            
+            # Дополнительные типы, которые могут отправляться с разных ОС
+            additional_types = [
+                'application/octet-stream',  # Windows часто отправляет так
+                'application/x-zip-compressed',  # Альтернативный MIME для ZIP
+                'application/zip-compressed',  # Еще один вариант
+                'image/jpg',  # Альтернативный MIME для JPEG
+            ]
+            
+            # Проверяем расширение файла для дополнительной валидации
+            filename = file.name.lower()
+            allowed_extensions = [
+                '.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx',
+                '.txt', '.zip', '.rar', '.json', '.xml'
+            ]
+            
+            # Проверяем MIME-тип
+            if file.content_type not in allowed_types + additional_types:
+                # Если MIME-тип не подходит, проверяем расширение файла
+                if not any(filename.endswith(ext) for ext in allowed_extensions):
+                    # Попробуем определить MIME-тип по расширению файла
+                    guessed_type, _ = mimetypes.guess_type(filename)
+                    if guessed_type and guessed_type in allowed_types:
+                        # Если угаданный тип разрешен, принимаем файл
+                        pass
+                    else:
+                        raise forms.ValidationError(
+                            f'Неподдерживаемый тип файла: {file.content_type}. '
+                            f'Разрешены: изображения (JPG, PNG, GIF), PDF, документы Word, '
+                            f'текстовые файлы, архивы (ZIP, RAR)'
+                        )
         
         return file
 

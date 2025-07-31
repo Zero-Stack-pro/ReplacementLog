@@ -309,7 +309,9 @@ class TaskListView(LoginRequiredMixin, ListView):
                     Q(department=employee.department, task_scope='general')
                 )
             elif employee.position == 'supervisor':
+                # Руководители видят задачи своего отдела
                 queryset = queryset.filter(department=employee.department)
+            # Администраторы видят все задачи (не добавляем фильтр)
         # Применяем фильтры
         form = TaskFilterForm(self.request.GET, user=self.request.user)
         if form.is_valid():
@@ -362,8 +364,11 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         if hasattr(self.request.user, 'employee'):
             employee = self.request.user.employee
             
+            # Администраторы имеют доступ ко всем задачам
+            if employee.position == 'admin':
+                pass
             # Для общих задач - доступ есть у всех сотрудников отдела
-            if task.task_scope == 'general':
+            elif task.task_scope == 'general':
                 if task.department != employee.department:
                     messages.error(self.request, 'У вас нет доступа к этому заданию')
                     return context
@@ -457,13 +462,15 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         
         employee = self.request.user.employee
         
-        # Только руководители и администраторы могут создавать задачи
-        if not employee.is_supervisor:
+        # Администраторы и руководители могут создавать задачи
+        if employee.position == 'admin':
+            return True
+        elif employee.position == 'supervisor':
+            # Проверяем, есть ли у сотрудника отделы для создания задач
+            available_departments = employee.get_available_departments_for_tasks()
+            return available_departments.exists()
+        else:
             return False
-        
-        # Проверяем, есть ли у сотрудника отделы для создания задач
-        available_departments = employee.get_available_departments_for_tasks()
-        return available_departments.exists()
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user.employee
@@ -681,6 +688,14 @@ def upload_attachment(request):
     print(f"DEBUG: POST={request.POST}")
     
     if request.method == 'POST':
+        # Добавляем детальную информацию о файле
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            print(f"DEBUG: File name: {uploaded_file.name}")
+            print(f"DEBUG: File content_type: {uploaded_file.content_type}")
+            print(f"DEBUG: File size: {uploaded_file.size}")
+            print(f"DEBUG: File encoding: {getattr(uploaded_file, 'charset', 'N/A')}")
+        
         form = AttachmentForm(request.POST, request.FILES)
         print(f"DEBUG: form.is_valid()={form.is_valid()}")
         print(f"DEBUG: form.errors={form.errors}")
