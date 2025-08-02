@@ -84,44 +84,6 @@ def dashboard(request):
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
-        
-        # Группируем задания по отделам для администратора
-        from itertools import groupby
-        from operator import attrgetter
-
-        # Сортируем задания по отделу для группировки
-        sorted_tasks = sorted(
-            active_tasks, 
-            key=attrgetter('department.name')
-        )
-        tasks_by_department = []
-        
-        for dept_name, dept_tasks in groupby(
-            sorted_tasks, 
-            key=attrgetter('department.name')
-        ):
-            tasks_by_department.append((dept_name, list(dept_tasks)))
-        
-        # Статистика по отделам для администратора
-        from django.db.models import Q
-        departments = Department.objects.all()
-        department_stats = []
-        
-        for dept in departments:
-            dept_tasks = Task.objects.filter(department=dept)
-            stats = {
-                'name': dept.name,
-                'total': dept_tasks.count(),
-                'pending': dept_tasks.filter(status='pending').count(),
-                'in_progress': dept_tasks.filter(status='in_progress').count(),
-                'overdue': dept_tasks.filter(
-                    status__in=['pending', 'in_progress'],
-                    due_date__lt=timezone.now()
-                ).count(),
-            }
-            department_stats.append(stats)
-            
-        is_admin_view = True
     elif employee.position == 'supervisor':
         active_tasks = Task.objects.filter(
             department=employee.department,
@@ -129,7 +91,6 @@ def dashboard(request):
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
-        is_admin_view = False
     else:
         # Обычные сотрудники видят свои задачи и общие задачи отдела
         active_tasks = Task.objects.filter(
@@ -139,7 +100,6 @@ def dashboard(request):
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
-        is_admin_view = False
 
     notifications = Notification.objects.filter(
         recipient=employee,
@@ -147,16 +107,11 @@ def dashboard(request):
     ).order_by('-sent_at')[:5]
 
     # Получаем списания материалов за сегодня
-    today = localdate()
+    today_date = localdate()
     if employee.position == 'admin':
-        writeoffs = MaterialWriteOff.objects.filter(
-            created_at__date=today
-        ).select_related('department', 'created_by')
+        writeoffs = MaterialWriteOff.objects.filter(created_at__date=today_date).select_related('department', 'created_by')
     else:
-        writeoffs = MaterialWriteOff.objects.filter(
-            department=employee.department, 
-            created_at__date=today
-        ).select_related('department', 'created_by')
+        writeoffs = MaterialWriteOff.objects.filter(department=employee.department, created_at__date=today_date).select_related('department', 'created_by')
 
     context = {
         'employee': employee,
@@ -167,18 +122,6 @@ def dashboard(request):
         'writeoffs': writeoffs,
         'today': timezone.localdate(),
     }
-    
-    # Добавляем переменные для администратора
-    if employee.position == 'admin':
-        context.update({
-            'is_admin_view': is_admin_view,
-            'tasks_by_department': tasks_by_department,
-            'department_stats': department_stats,
-        })
-    else:
-        context.update({
-            'is_admin_view': is_admin_view,
-        })
     return render(
         request,
         'shift_log/dashboard.html',
