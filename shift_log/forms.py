@@ -524,6 +524,27 @@ class TaskStatusUpdateForm(forms.Form):
 
 
 class DailyReportForm(forms.ModelForm):
+    photo = forms.ImageField(
+        widget=forms.FileInput(
+            attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }
+        ),
+        required=False,
+        label='Фотография'
+    )
+    photo_caption = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Подпись к фотографии'
+            }
+        ),
+        required=False,
+        label='Подпись к фотографии'
+    )
+
     class Meta:
         model = DailyReport
         fields = ['comment']
@@ -540,7 +561,17 @@ class DailyReportForm(forms.ModelForm):
         }
         labels = {
             'comment': 'Ежедневный отчёт (комментарий)'
-        } 
+        }
+
+    def clean_photo(self):
+        """Проверка загруженной фотографии"""
+        photo = self.cleaned_data.get('photo')
+        if photo:
+            if photo.size > 10 * 1024 * 1024:  # 10MB
+                raise forms.ValidationError(
+                    f'Файл {photo.name} слишком большой. Максимальный размер 10MB.'
+                )
+        return photo
 
 
 class MaterialWriteOffForm(forms.ModelForm):

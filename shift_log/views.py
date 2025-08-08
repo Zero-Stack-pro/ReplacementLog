@@ -21,9 +21,10 @@ from .forms import (AttachmentForm, DailyReportForm, MaterialWriteOffForm,
                     NoteForm, ProjectTaskForm, ShiftFilterForm, ShiftForm,
                     ShiftLogForm, TaskFilterForm, TaskForm, TaskReportForm,
                     TaskStatusUpdateForm, UserRegistrationForm)
-from .models import (ActivityLog, Attachment, DailyReport, Department,
-                     Employee, MaterialWriteOff, Note, Notification, Project,
-                     ProjectTask, Shift, ShiftLog, Task, TaskReport)
+from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
+                     Department, Employee, MaterialWriteOff, Note,
+                     Notification, Project, ProjectTask, Shift, ShiftLog, Task,
+                     TaskReport)
 from .utils import log_activity, send_notification
 
 
@@ -60,7 +61,7 @@ def dashboard(request):
     )
 
     if request.method == 'POST' and 'daily_report_submit' in request.POST:
-        form = DailyReportForm(request.POST, instance=daily_report)
+        form = DailyReportForm(request.POST, request.FILES, instance=daily_report)
         if form.is_valid():
             # Дополняем комментарий, если уже есть текст
             new_comment = form.cleaned_data['comment']
@@ -71,6 +72,19 @@ def dashboard(request):
                 daily_report.comment = new_comment
             daily_report.created_by = request.user
             daily_report.save()
+            
+            # Обрабатываем загруженную фотографию
+            photo = form.cleaned_data.get('photo')
+            photo_caption = form.cleaned_data.get('photo_caption', '')
+            
+            if photo:
+                DailyReportPhoto.objects.create(
+                    daily_report=daily_report,
+                    image=photo,
+                    caption=photo_caption.strip(),
+                    uploaded_by=employee
+                )
+            
             messages.success(request, 'Ежедневный отчёт сохранён')
             return redirect('shift_log:dashboard')
         daily_report_form = form
@@ -1599,7 +1613,7 @@ def daily_reports_list(request):
     if date_to:
         reports = reports.filter(date__lte=date_to)
 
-    reports = reports.select_related('department', 'created_by').order_by('-date')
+    reports = reports.select_related('department', 'created_by').prefetch_related('photos').order_by('-date')
 
     # Для фильтрации по отделу (только для админа)
     departments = Department.objects.all() if employee.position == 'admin' else None

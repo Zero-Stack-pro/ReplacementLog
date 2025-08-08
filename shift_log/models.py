@@ -804,6 +804,50 @@ class DailyReport(models.Model):
     def __str__(self):
         return f"{self.department} — {self.date}"
 
+
+class DailyReportPhoto(models.Model):
+    """Модель фотографии для ежедневного отчета"""
+    daily_report = models.ForeignKey(
+        DailyReport, 
+        on_delete=models.CASCADE, 
+        related_name='photos',
+        verbose_name="Ежедневный отчет"
+    )
+    image = models.ImageField(
+        upload_to='daily_reports/photos/',
+        verbose_name="Фотография"
+    )
+    caption = models.CharField(
+        max_length=255, 
+        blank=True, 
+        verbose_name="Подпись к фотографии"
+    )
+    uploaded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        verbose_name="Загружено"
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата загрузки"
+    )
+
+    class Meta:
+        verbose_name = "Фотография ежедневного отчета"
+        verbose_name_plural = "Фотографии ежедневных отчетов"
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"Фото отчета {self.daily_report} - {self.uploaded_at.strftime('%d.%m.%Y %H:%M')}"
+
+    def get_image_url(self):
+        """Возвращает URL изображения"""
+        return self.image.url if self.image else None
+
+    def get_filename(self):
+        """Возвращает имя файла"""
+        return self.image.name.split('/')[-1] if self.image else None
+
 UNIT_CHOICES = [
     ('m', 'м'),
     ('pcs', 'шт'),

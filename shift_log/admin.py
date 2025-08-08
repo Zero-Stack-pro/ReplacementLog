@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import (ActivityLog, Attachment, Department, Employee,
-                     MaterialWriteOff, Note, Notification, Project,
-                     ProjectTask, Task, TaskReport)
+from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
+                     Department, Employee, MaterialWriteOff, Note,
+                     Notification, Project, ProjectTask, Task, TaskReport)
 
 
 @admin.register(Department)
@@ -102,6 +102,26 @@ class ActivityLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(DailyReport)
+class DailyReportAdmin(admin.ModelAdmin):
+    list_display = ['department', 'date', 'created_by', 'updated_at']
+    list_filter = ['department', 'date', 'created_by', 'updated_at']
+    search_fields = ['department__name', 'comment']
+    raw_id_fields = ['created_by']
+    readonly_fields = ['updated_at']
+    date_hierarchy = 'date'
+
+
+@admin.register(DailyReportPhoto)
+class DailyReportPhotoAdmin(admin.ModelAdmin):
+    list_display = ['daily_report', 'caption', 'uploaded_by', 'uploaded_at']
+    list_filter = ['uploaded_at', 'daily_report__department']
+    search_fields = ['caption', 'daily_report__department__name']
+    raw_id_fields = ['daily_report', 'uploaded_by']
+    readonly_fields = ['uploaded_at']
+    date_hierarchy = 'uploaded_at'
 
 admin.site.register(MaterialWriteOff)
 admin.site.register(Project)
