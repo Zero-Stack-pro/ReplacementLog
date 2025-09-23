@@ -262,20 +262,32 @@
                     <h6><i class="bi bi-images"></i> Фотографии отчета</h6>
                     <div class="row">
                         {% for photo in daily_report.photos.all %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card">
-                                <img src="{{ photo.image.url }}" class="card-img-top" alt="Фото отчета" 
-                                     style="max-height: 200px; object-fit: cover;">
-                                <div class="card-body p-2">
-                                    {% if photo.caption %}
-                                        <p class="card-text small mb-1">{{ photo.caption }}</p>
-                                    {% endif %}
-                                    <small class="text-muted">
-                                        Загружено: {{ photo.uploaded_at|date:'d.m.Y H:i' }}
-                                    </small>
+                            {% if photo.file_exists %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <img src="{{ photo.image.url }}" class="card-img-top" alt="Фото отчета" 
+                                         style="max-height: 200px; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        {% if photo.caption %}
+                                            <p class="card-text small mb-1">{{ photo.caption }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            Загружено: {{ photo.uploaded_at|date:'d.m.Y H:i' }}
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            {% else %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center text-muted">
+                                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                        <p class="mt-2 mb-1">Файл не найден</p>
+                                        <small>{{ photo.get_filename }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         {% endfor %}
                     </div>
                 </div>

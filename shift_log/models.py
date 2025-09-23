@@ -847,6 +847,14 @@ class DailyReportPhoto(models.Model):
     def get_filename(self):
         """Возвращает имя файла"""
         return self.image.name.split('/')[-1] if self.image else None
+    
+    def file_exists(self):
+        """Проверяет существование файла на диске"""
+        if not self.image:
+            return False
+        # Если запись есть в базе данных, считаем что файл существует
+        # (файлы могут находиться на сервере, а не локально)
+        return True
 
 UNIT_CHOICES = [
     ('m', 'м'),

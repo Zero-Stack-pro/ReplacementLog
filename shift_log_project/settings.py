@@ -96,7 +96,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-# SQLite3 settings для локальной разработки (закомментировано)
+# # SQLite3 settings для локальной разработки (закомментировано)
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
