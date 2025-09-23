@@ -28,6 +28,58 @@ from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
 from .utils import log_activity, send_notification
 
 
+def group_tasks_by_department(tasks):
+    """Группирует задачи по отделам и создает статистику"""
+    from collections import defaultdict
+    
+    tasks_by_department = defaultdict(list)
+    department_stats = []
+    
+    # Общие счетчики для сводной статистики
+    total_overdue = 0
+    total_in_progress = 0
+    total_pending = 0
+    
+    for task in tasks:
+        dept_name = task.department.name
+        tasks_by_department[dept_name].append(task)
+    
+    # Создаем статистику по отделам
+    for dept_name, dept_tasks in tasks_by_department.items():
+        total = len(dept_tasks)
+        pending = len([t for t in dept_tasks if t.status == 'pending'])
+        in_progress = len([t for t in dept_tasks if t.status == 'in_progress'])
+        overdue = len([t for t in dept_tasks if t.is_overdue])
+        
+        # Добавляем к общим счетчикам
+        total_overdue += overdue
+        total_in_progress += in_progress
+        total_pending += pending
+        
+        department_stats.append({
+            'name': dept_name,
+            'total': total,
+            'pending': pending,
+            'in_progress': in_progress,
+            'overdue': overdue
+        })
+    
+    # Сортируем отделы по количеству задач
+    tasks_by_department = dict(
+        sorted(tasks_by_department.items(), key=lambda x: len(x[1]), reverse=True)
+    )
+    department_stats.sort(key=lambda x: x['total'], reverse=True)
+    
+    # Добавляем сводную статистику
+    summary_stats = {
+        'total_overdue': total_overdue,
+        'total_in_progress': total_in_progress,
+        'total_pending': total_pending
+    }
+    
+    return tasks_by_department, department_stats, summary_stats
+
+
 def register(request):
     """Регистрация нового пользователя"""
     if request.method == 'POST':
@@ -98,6 +150,7 @@ def dashboard(request):
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
+        is_admin_view = True
     elif employee.position == 'supervisor':
         active_tasks = Task.objects.filter(
             department=employee.department,
@@ -105,15 +158,29 @@ def dashboard(request):
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
+        is_admin_view = True  # Используем структурированное отображение
     else:
         # Обычные сотрудники видят свои задачи и общие задачи отдела
         active_tasks = Task.objects.filter(
-            Q(assigned_to=employee) | 
+            Q(assigned_to=employee) |
             Q(department=employee.department, task_scope='general'),
             status__in=['pending', 'in_progress']
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
+        is_admin_view = False  # Будет определено после группировки
+    
+    # Группируем задачи по отделам
+    tasks_by_department, department_stats, summary_stats = group_tasks_by_department(active_tasks)
+    
+    # Убеждаемся, что tasks_by_department является словарем
+    if not isinstance(tasks_by_department, dict):
+        tasks_by_department = {}
+    
+    # Для обычных сотрудников используем структурированное отображение,
+    # если есть задачи из разных отделов
+    if employee.position == 'employee':
+        is_admin_view = len(tasks_by_department) > 1
 
     notifications = Notification.objects.filter(
         recipient=employee,
@@ -130,6 +197,10 @@ def dashboard(request):
     context = {
         'employee': employee,
         'active_tasks': active_tasks,
+        'tasks_by_department': tasks_by_department,
+        'department_stats': department_stats,
+        'summary_stats': summary_stats,
+        'is_admin_view': is_admin_view,
         'notifications': notifications,
         'daily_report': daily_report,
         'daily_report_form': daily_report_form,
@@ -846,7 +917,8 @@ def mark_all_notifications_read(request):
                 read_at=timezone.now()
             )
             
-            print(f"API: Отмечено {count} уведомлений как прочитанные для {request.user.employee.user.username}")
+            print(f"API: Отмечено {count} уведомлений как прочитанные для "
+                  f"{request.user.employee.user.username}")
             
             response = JsonResponse({
                 'success': True,
@@ -915,7 +987,7 @@ def api_task_status_update(request, task_id):
                         f'Статус задачи "{task.title}" изменен на "{new_status_display}"'
                     )
                 
-                            # Уведомление для руководителя отдела (если он не тот, кто изменил статус)
+            # Уведомление для руководителя отдела (если он не тот, кто изменил статус)
             department_supervisor = Employee.objects.filter(
                 department=task.department,
                 position='supervisor',
@@ -926,7 +998,8 @@ def api_task_status_update(request, task_id):
                     department_supervisor,
                     'task_completed' if new_status == 'completed' else 'task_assigned',
                     f'Статус задачи изменен: {task.title}',
-                    f'Статус задачи "{task.title}" в отделе {task.department.name} изменен на "{new_status_display}"'
+                    f'Статус задачи "{task.title}" в отделе '
+                    f'{task.department.name} изменен на "{new_status_display}"'
                 )
                 
                 return JsonResponse({'success': True})
