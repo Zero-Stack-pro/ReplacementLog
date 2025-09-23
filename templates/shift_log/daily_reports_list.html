@@ -67,9 +67,10 @@
                                         <img src="{{ photo.image.url }}" 
                                              alt="Фото отчета" 
                                              class="img-thumbnail" 
-                                             style="width: 50px; height: 50px; object-fit: cover;"
+                                             style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
                                              data-bs-toggle="modal" 
-                                             data-bs-target="#photoModal{{ photo.id }}">
+                                             data-bs-target="#photoGallery{{ report.id }}"
+                                             data-photo-index="{{ forloop.counter0 }}">
                                     {% else %}
                                         <div class="img-thumbnail d-flex align-items-center justify-content-center bg-light" 
                                              style="width: 50px; height: 50px;"
@@ -101,38 +102,203 @@
 
 <!-- Модальные окна для просмотра фотографий -->
 {% for report in reports %}
-    {% for photo in report.photos.all %}
-        {% if photo.file_exists %}
-        <div class="modal fade" id="photoModal{{ photo.id }}" tabindex="-1" aria-labelledby="photoModalLabel{{ photo.id }}" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="photoModalLabel{{ photo.id }}">
-                            Фото отчета {{ report.department.name }} - {{ report.date|date:'d.m.Y' }}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    {% if report.photos.all %}
+    <div class="modal fade" id="photoGallery{{ report.id }}" tabindex="-1" aria-labelledby="photoGalleryLabel{{ report.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoGalleryLabel{{ report.id }}">
+                        Фотографии отчета {{ report.department.name }} - {{ report.date|date:'d.m.Y' }}
+                        <span class="badge bg-primary ms-2" id="photoCounter{{ report.id }}">1 / {{ report.photos.count }}</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="position-relative">
+                        <!-- Кнопка предыдущая -->
+                        <button type="button" class="btn btn-outline-primary position-absolute start-0 top-50 translate-middle-y" 
+                                id="prevPhoto{{ report.id }}" style="z-index: 10;">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        
+                        <!-- Контейнер для фотографии -->
+                        <div id="photoContainer{{ report.id }}" class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                            {% for photo in report.photos.all %}
+                                {% if photo.file_exists %}
+                                <div class="photo-item" data-photo-id="{{ photo.id }}" style="display: {% if forloop.first %}block{% else %}none{% endif %};">
+                                    <img src="{{ photo.image.url }}" class="img-fluid" alt="Фото отчета" style="max-height: 500px;">
+                                    {% if photo.caption %}
+                                        <div class="mt-3">
+                                            <p class="text-muted">{{ photo.caption }}</p>
+                                        </div>
+                                    {% endif %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Загружено: {{ photo.uploaded_at|date:'d.m.Y H:i' }} 
+                                            пользователем {{ photo.uploaded_by.get_full_name }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Кнопка следующая -->
+                        <button type="button" class="btn btn-outline-primary position-absolute end-0 top-50 translate-middle-y" 
+                                id="nextPhoto{{ report.id }}" style="z-index: 10;">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
-                    <div class="modal-body text-center">
-                        <img src="{{ photo.image.url }}" class="img-fluid" alt="Фото отчета">
-                        {% if photo.caption %}
-                            <div class="mt-3">
-                                <p class="text-muted">{{ photo.caption }}</p>
-                            </div>
-                        {% endif %}
-                        <div class="mt-2">
-                            <small class="text-muted">
-                                Загружено: {{ photo.uploaded_at|date:'d.m.Y H:i' }} 
-                                пользователем {{ photo.uploaded_by.get_full_name }}
-                            </small>
+                    
+                    <!-- Миниатюры фотографий -->
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-center flex-wrap gap-2" id="photoThumbnails{{ report.id }}">
+                            {% for photo in report.photos.all %}
+                                {% if photo.file_exists %}
+                                <img src="{{ photo.image.url }}" 
+                                     class="img-thumbnail photo-thumbnail" 
+                                     style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;"
+                                     data-photo-index="{{ forloop.counter0 }}"
+                                     alt="Миниатюра">
+                                {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                 </div>
             </div>
         </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация галерей фотографий
+    {% for report in reports %}
+        {% if report.photos.all %}
+        initPhotoGallery({{ report.id }}, {{ report.photos.count }});
         {% endif %}
     {% endfor %}
-{% endfor %}
+});
+
+function initPhotoGallery(reportId, photoCount) {
+    let currentIndex = 0;
+    const modalId = `photoGallery${reportId}`;
+    const containerId = `photoContainer${reportId}`;
+    const counterId = `photoCounter${reportId}`;
+    const prevBtnId = `prevPhoto${reportId}`;
+    const nextBtnId = `nextPhoto${reportId}`;
+    const thumbnailsId = `photoThumbnails${reportId}`;
+    
+    const modal = document.getElementById(modalId);
+    const container = document.getElementById(containerId);
+    const counter = document.getElementById(counterId);
+    const prevBtn = document.getElementById(prevBtnId);
+    const nextBtn = document.getElementById(nextBtnId);
+    const thumbnails = document.getElementById(thumbnailsId);
+    
+    if (!modal || !container || !counter || !prevBtn || !nextBtn || !thumbnails) return;
+    
+    const photos = container.querySelectorAll('.photo-item');
+    const thumbnailImages = thumbnails.querySelectorAll('.photo-thumbnail');
+    
+    // Функция показа фотографии по индексу
+    function showPhoto(index) {
+        // Скрываем все фотографии
+        photos.forEach((photo, i) => {
+            photo.style.display = i === index ? 'block' : 'none';
+        });
+        
+        // Обновляем активную миниатюру
+        thumbnailImages.forEach((thumb, i) => {
+            thumb.classList.toggle('border-primary', i === index);
+            thumb.classList.toggle('border-2', i === index);
+        });
+        
+        // Обновляем счетчик
+        counter.textContent = `${index + 1} / ${photoCount}`;
+        
+        currentIndex = index;
+        
+        // Показываем/скрываем кнопки навигации
+        prevBtn.style.display = photoCount > 1 ? 'block' : 'none';
+        nextBtn.style.display = photoCount > 1 ? 'block' : 'none';
+    }
+    
+    // Обработчики кнопок навигации
+    prevBtn.addEventListener('click', function() {
+        const newIndex = currentIndex > 0 ? currentIndex - 1 : photoCount - 1;
+        showPhoto(newIndex);
+    });
+    
+    nextBtn.addEventListener('click', function() {
+        const newIndex = currentIndex < photoCount - 1 ? currentIndex + 1 : 0;
+        showPhoto(newIndex);
+    });
+    
+    // Обработчики миниатюр
+    thumbnailImages.forEach((thumb, index) => {
+        thumb.addEventListener('click', function() {
+            showPhoto(index);
+        });
+    });
+    
+    // Клавиатурная навигация
+    modal.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') {
+            prevBtn.click();
+        } else if (e.key === 'ArrowRight') {
+            nextBtn.click();
+        }
+    });
+    
+    // Обработчик открытия модального окна
+    modal.addEventListener('show.bs.modal', function(e) {
+        // Получаем индекс фотографии, по которой кликнули
+        const trigger = e.relatedTarget;
+        if (trigger && trigger.hasAttribute('data-photo-index')) {
+            const index = parseInt(trigger.getAttribute('data-photo-index'));
+            showPhoto(index);
+        } else {
+            showPhoto(0);
+        }
+    });
+    
+    // Инициализация
+    showPhoto(0);
+}
+</script>
+
+<style>
+.photo-thumbnail {
+    transition: all 0.2s ease;
+}
+
+.photo-thumbnail:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.photo-thumbnail.border-primary {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+#prevPhoto, #nextPhoto {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+#prevPhoto:hover, #nextPhoto:hover {
+    opacity: 1;
+}
+
+.photo-item {
+    transition: opacity 0.3s ease;
+}
+</style>
+
 {% endblock %} 
