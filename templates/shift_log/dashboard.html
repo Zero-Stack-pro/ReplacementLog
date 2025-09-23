@@ -81,7 +81,12 @@
                                         <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
                                     </div>
                                     <small class="text-muted d-block">
-                                        <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
+                                        <strong>Исполнитель:</strong> 
+                                        {% if task.assigned_to %}
+                                            {{ task.assigned_to.get_full_name }}
+                                        {% else %}
+                                            <span class="text-primary fw-bold">Задача для всего отдела</span>
+                                        {% endif %}
                                     </small>
                                     <small class="text-muted d-block">
                                         <strong>Срок:</strong> 
@@ -123,7 +128,12 @@
                                     {% endif %}
                                 </div>
                                 <small class="text-muted d-block">
-                                    <strong>Исполнитель:</strong> {{ task.assigned_to.get_full_name }}
+                                    <strong>Исполнитель:</strong> 
+                                    {% if task.assigned_to %}
+                                        {{ task.assigned_to.get_full_name }}
+                                    {% else %}
+                                        <span class="text-primary fw-bold">Задача для всего отдела</span>
+                                    {% endif %}
                                 </small>
                                 <small class="text-muted d-block">
                                     <strong>Срок:</strong> 

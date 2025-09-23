@@ -154,7 +154,7 @@
                                             {% if task.assigned_to %}
                                                 <small>{{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}</small>
                                             {% else %}
-                                                <small class="text-muted">Не назначен</small>
+                                                <small class="text-primary fw-bold">Задача для всего отдела</small>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -250,7 +250,7 @@
                                         {% if task.assigned_to %}
                                             {{ task.assigned_to.get_full_name }}
                                         {% else %}
-                                            <span class="text-muted">Не назначен</span>
+                                            <span class="text-primary fw-bold">Задача для всего отдела</span>
                                         {% endif %}
                                     </td>
                                     <td>

@@ -73,7 +73,7 @@
                                 {{ task.assigned_to.get_full_name }}
                                 <br><small class="text-muted">{{ task.assigned_to.department.name }}</small>
                             {% else %}
-                                <span class="text-muted">Не назначен</span>
+                                <span class="text-primary fw-bold">Задача для всего отдела</span>
                             {% endif %}
                         </p>
                     </div>

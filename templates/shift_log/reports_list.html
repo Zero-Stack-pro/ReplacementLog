@@ -210,17 +210,31 @@
                                         </td>
                                         {% if employee.position in 'admin,supervisor' %}
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-sm me-2">
-                                                    <div class="avatar-title bg-light rounded-circle">
-                                                        {{ task.assigned_to.user.first_name|first|upper }}
+                                            {% if task.assigned_to %}
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title bg-light rounded-circle">
+                                                            {{ task.assigned_to.user.first_name|first|upper }}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium small">{{ task.assigned_to.get_full_name|truncatechars:15 }}</div>
+                                                        <small class="text-muted">{{ task.assigned_to.get_position_display_name }}</small>
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <div class="fw-medium small">{{ task.assigned_to.get_full_name|truncatechars:15 }}</div>
-                                                    <small class="text-muted">{{ task.assigned_to.get_position_display_name }}</small>
+                                            {% else %}
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="avatar-title bg-primary rounded-circle">
+                                                            <i class="bi bi-people text-white"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium small text-primary">Задача для всего отдела</div>
+                                                        <small class="text-muted">Общая задача</small>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            {% endif %}
                                         </td>
                                         {% endif %}
                                         <td>
