@@ -107,9 +107,9 @@ def dashboard(request):
     # Получаем или создаём ежедневный отчёт за сегодня для отдела пользователя
     today = timezone.localdate()
     
-    # Проверяем, включен ли индивидуальный режим для отдела
-    if employee.department.individual:
-        # В индивидуальном режиме каждый сотрудник ведет свой отчет
+    # Проверяем, включен ли индивидуальный режим для сотрудника
+    if employee.individual_report:
+        # В индивидуальном режиме сотрудник ведет свой отчет
         daily_report, _ = DailyReport.objects.get_or_create(
             department=employee.department,
             employee=employee,
@@ -1705,7 +1705,7 @@ def daily_reports_list(request):
         reports = reports.filter(department=employee.department)
         
         # В индивидуальном режиме показываем только свои отчеты
-        if employee.department.individual:
+        if employee.individual_report:
             reports = reports.filter(employee=employee)
 
     if date_from:
@@ -1725,7 +1725,7 @@ def daily_reports_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'selected_department': request.GET.get('department', ''),
-        'is_individual_mode': employee.department.individual if not employee.position == 'admin' else False,
+        'is_individual_mode': employee.individual_report if not employee.position == 'admin' else False,
     }
     return render(request, 'shift_log/daily_reports_list.html', context)
 

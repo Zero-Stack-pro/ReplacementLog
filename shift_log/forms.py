@@ -24,10 +24,18 @@ class EmployeeForm(forms.ModelForm):
     """Форма сотрудника"""
     class Meta:
         model = Employee
-        fields = ['department', 'position', 'phone', 'telegram_id', 'is_active']
+        fields = ['department', 'position', 'phone', 'telegram_id', 'individual_report', 'is_active']
         widgets = {
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'telegram_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'individual_report': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'individual_report': 'Индивидуальный отчет',
+        }
+        help_texts = {
+            'individual_report': ('Если включено, сотрудник будет вести '
+                                'свой ежедневный отчет'),
         }
 
 
@@ -35,18 +43,10 @@ class DepartmentForm(forms.ModelForm):
     """Форма отдела"""
     class Meta:
         model = Department
-        fields = ['name', 'description', 'individual']
+        fields = ['name', 'description']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'individual': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        labels = {
-            'individual': 'Индивидуальный режим отчетов',
-        }
-        help_texts = {
-            'individual': ('Если включено, каждый сотрудник отдела будет '
-                          'вести свой ежедневный отчет'),
         }
 
 
@@ -577,8 +577,7 @@ class DailyReportForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Устанавливаем placeholder в зависимости от режима
-        if (self.employee and self.department and 
-                self.department.individual):
+        if (self.employee and self.employee.individual_report):
             self.fields['comment'].widget.attrs['placeholder'] = (
                 'Введите или дополните ваш ежедневный отчёт...'
             )

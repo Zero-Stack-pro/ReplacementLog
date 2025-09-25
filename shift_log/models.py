@@ -9,10 +9,6 @@ class Department(models.Model):
     """Модель отдела"""
     name = models.CharField(max_length=100, verbose_name="Название отдела")
     description = models.TextField(blank=True, verbose_name="Описание")
-    individual = models.BooleanField(
-        default=False, 
-        verbose_name="Индивидуальный режим отчетов"
-    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
@@ -38,6 +34,10 @@ class Employee(models.Model):
     position = models.CharField(max_length=20, choices=POSITION_CHOICES, default='employee', verbose_name="Должность")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
     telegram_id = models.CharField(max_length=50, blank=True, verbose_name="Telegram ID")
+    individual_report = models.BooleanField(
+        default=False, 
+        verbose_name="Индивидуальный отчет"
+    )
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
 

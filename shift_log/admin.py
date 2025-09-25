@@ -7,17 +7,12 @@ from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'individual', 'created_at', 'updated_at']
+    list_display = ['name', 'created_at', 'updated_at']
     search_fields = ['name', 'description']
-    list_filter = ['individual', 'created_at']
+    list_filter = ['created_at']
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'description')
-        }),
-        ('Настройки отчетов', {
-            'fields': ('individual',),
-            'description': ('Если включено, каждый сотрудник отдела будет '
-                           'вести свой ежедневный отчет')
         }),
         ('Временные метки', {
             'fields': ('created_at', 'updated_at'),
@@ -30,11 +25,29 @@ class DepartmentAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = [
-        'user', 'department', 'position', 'phone', 'is_active', 'created_at'
+        'user', 'department', 'position', 'individual_report', 'is_active', 'created_at'
     ]
-    list_filter = ['department', 'position', 'is_active', 'created_at']
+    list_filter = ['department', 'position', 'individual_report', 'is_active', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone']
     raw_id_fields = ['user']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('user', 'department', 'position', 'phone', 'telegram_id')
+        }),
+        ('Настройки отчетов', {
+            'fields': ('individual_report',),
+            'description': ('Если включено, сотрудник будет вести '
+                           'свой ежедневный отчет')
+        }),
+        ('Статус', {
+            'fields': ('is_active',)
+        }),
+        ('Временные метки', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ['created_at']
 
 
 @admin.register(Task)
