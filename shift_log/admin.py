@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.utils.html import format_html
 
 from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
                      Department, Employee, MaterialWriteOff, Note,
@@ -8,9 +7,24 @@ from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'created_at', 'updated_at']
+    list_display = ['name', 'individual', 'created_at', 'updated_at']
     search_fields = ['name', 'description']
-    list_filter = ['created_at']
+    list_filter = ['individual', 'created_at']
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'description')
+        }),
+        ('Настройки отчетов', {
+            'fields': ('individual',),
+            'description': ('Если включено, каждый сотрудник отдела будет '
+                           'вести свой ежедневный отчет')
+        }),
+        ('Временные метки', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ['created_at', 'updated_at']
 
 
 @admin.register(Employee)
@@ -106,12 +120,21 @@ class ActivityLogAdmin(admin.ModelAdmin):
 
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
-    list_display = ['department', 'date', 'created_by', 'updated_at']
-    list_filter = ['department', 'date', 'created_by', 'updated_at']
-    search_fields = ['department__name', 'comment']
-    raw_id_fields = ['created_by']
+    list_display = ['department', 'employee', 'date', 'created_by', 'updated_at']
+    list_filter = ['department', 'employee', 'date', 'created_by', 'updated_at']
+    search_fields = ['department__name', 'employee__user__first_name', 'employee__user__last_name', 'comment']
+    raw_id_fields = ['created_by', 'employee']
     readonly_fields = ['updated_at']
     date_hierarchy = 'date'
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('department', 'employee', 'date', 'comment')
+        }),
+        ('Метаданные', {
+            'fields': ('created_by', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(DailyReportPhoto)

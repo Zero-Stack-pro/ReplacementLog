@@ -106,14 +106,33 @@ def dashboard(request):
 
     # Получаем или создаём ежедневный отчёт за сегодня для отдела пользователя
     today = timezone.localdate()
-    daily_report, _ = DailyReport.objects.get_or_create(
-        department=employee.department,
-        date=today,
-        defaults={'created_by': request.user}
-    )
+    
+    # Проверяем, включен ли индивидуальный режим для отдела
+    if employee.department.individual:
+        # В индивидуальном режиме каждый сотрудник ведет свой отчет
+        daily_report, _ = DailyReport.objects.get_or_create(
+            department=employee.department,
+            employee=employee,
+            date=today,
+            defaults={'created_by': request.user}
+        )
+    else:
+        # В обычном режиме один отчет на отдел
+        daily_report, _ = DailyReport.objects.get_or_create(
+            department=employee.department,
+            employee=None,
+            date=today,
+            defaults={'created_by': request.user}
+        )
 
     if request.method == 'POST' and 'daily_report_submit' in request.POST:
-        form = DailyReportForm(request.POST, request.FILES, instance=daily_report)
+        form = DailyReportForm(
+            request.POST, 
+            request.FILES, 
+            instance=daily_report,
+            employee=employee,
+            department=employee.department
+        )
         if form.is_valid():
             # Дополняем комментарий, если уже есть текст
             new_comment = form.cleaned_data['comment']
@@ -141,7 +160,11 @@ def dashboard(request):
             return redirect('shift_log:dashboard')
         daily_report_form = form
     else:
-        daily_report_form = DailyReportForm(instance=daily_report)
+        daily_report_form = DailyReportForm(
+            instance=daily_report,
+            employee=employee,
+            department=employee.department
+        )
 
     # Получаем активные задания в зависимости от роли
     if employee.position == 'admin':
@@ -1680,13 +1703,17 @@ def daily_reports_list(request):
     else:
         # Сотрудник и руководитель — только свой отдел
         reports = reports.filter(department=employee.department)
+        
+        # В индивидуальном режиме показываем только свои отчеты
+        if employee.department.individual:
+            reports = reports.filter(employee=employee)
 
     if date_from:
         reports = reports.filter(date__gte=date_from)
     if date_to:
         reports = reports.filter(date__lte=date_to)
 
-    reports = reports.select_related('department', 'created_by').prefetch_related('photos').order_by('-date')
+    reports = reports.select_related('department', 'employee', 'created_by').prefetch_related('photos').order_by('-date')
 
     # Для фильтрации по отделу (только для админа)
     departments = Department.objects.all() if employee.position == 'admin' else None
@@ -1698,6 +1725,7 @@ def daily_reports_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'selected_department': request.GET.get('department', ''),
+        'is_individual_mode': employee.department.individual if not employee.position == 'admin' else False,
     }
     return render(request, 'shift_log/daily_reports_list.html', context)
 

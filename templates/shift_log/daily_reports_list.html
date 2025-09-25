@@ -16,7 +16,14 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4"><i class="bi bi-journal-text"></i> Ежедневные отчёты</h2>
+    <h2 class="mb-4">
+        <i class="bi bi-journal-text"></i> 
+        {% if is_individual_mode %}
+            Ежедневные отчёты сотрудников
+        {% else %}
+            Ежедневные отчёты
+        {% endif %}
+    </h2>
     <form method="get" class="row g-3 mb-4 align-items-end">
         <div class="col-auto">
             <label for="date_from" class="form-label">С даты</label>
@@ -47,6 +54,9 @@
                 <tr>
                     <th>Дата</th>
                     <th>Отдел</th>
+                    {% if is_individual_mode %}
+                        <th>Сотрудник</th>
+                    {% endif %}
                     <th>Комментарий</th>
                     <th>Фотографии</th>
                     <th>Автор</th>
@@ -58,6 +68,15 @@
                 <tr>
                     <td>{{ report.date|date:'d.m.Y' }}</td>
                     <td>{{ report.department.name }}</td>
+                    {% if is_individual_mode %}
+                        <td>
+                            {% if report.employee %}
+                                {{ report.employee.get_full_name }}
+                            {% else %}
+                                <span class="text-muted">Общий отчет</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     <td style="white-space: pre-line; max-width: 300px;">{{ report.comment|default:'—' }}</td>
                     <td>
                         {% if report.photos.all %}
@@ -108,7 +127,13 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="photoGalleryLabel{{ report.id }}">
-                        Фотографии отчета {{ report.department.name }} - {{ report.date|date:'d.m.Y' }}
+                        Фотографии отчета 
+                        {% if report.employee %}
+                            {{ report.employee.get_full_name }} ({{ report.department.name }})
+                        {% else %}
+                            {{ report.department.name }}
+                        {% endif %}
+                        - {{ report.date|date:'d.m.Y' }}
                         <span class="badge bg-primary ms-2" id="photoCounter{{ report.id }}">1 / {{ report.photos.count }}</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

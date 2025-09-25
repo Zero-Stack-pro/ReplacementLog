@@ -35,10 +35,18 @@ class DepartmentForm(forms.ModelForm):
     """Форма отдела"""
     class Meta:
         model = Department
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'individual']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'individual': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'individual': 'Индивидуальный режим отчетов',
+        }
+        help_texts = {
+            'individual': ('Если включено, каждый сотрудник отдела будет '
+                          'вести свой ежедневный отчет'),
         }
 
 
@@ -562,6 +570,28 @@ class DailyReportForm(forms.ModelForm):
         labels = {
             'comment': 'Ежедневный отчёт (комментарий)'
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.employee = kwargs.pop('employee', None)
+        self.department = kwargs.pop('department', None)
+        super().__init__(*args, **kwargs)
+        
+        # Устанавливаем placeholder в зависимости от режима
+        if (self.employee and self.department and 
+                self.department.individual):
+            self.fields['comment'].widget.attrs['placeholder'] = (
+                'Введите или дополните ваш ежедневный отчёт...'
+            )
+            self.fields['comment'].label = (
+                'Ваш ежедневный отчёт (комментарий)'
+            )
+        else:
+            self.fields['comment'].widget.attrs['placeholder'] = (
+                'Введите или дополните ежедневный отчёт отдела...'
+            )
+            self.fields['comment'].label = (
+                'Ежедневный отчёт отдела (комментарий)'
+            )
 
     def clean_photo(self):
         """Проверка загруженной фотографии"""

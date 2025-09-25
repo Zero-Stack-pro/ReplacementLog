@@ -9,6 +9,10 @@ class Department(models.Model):
     """Модель отдела"""
     name = models.CharField(max_length=100, verbose_name="Название отдела")
     description = models.TextField(blank=True, verbose_name="Описание")
+    individual = models.BooleanField(
+        default=False, 
+        verbose_name="Индивидуальный режим отчетов"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
@@ -788,6 +792,14 @@ class DailyReport(models.Model):
     department = models.ForeignKey(
         'Department', on_delete=models.CASCADE, related_name='daily_reports'
     )
+    employee = models.ForeignKey(
+        'Employee', 
+        on_delete=models.CASCADE, 
+        related_name='daily_reports',
+        null=True, 
+        blank=True, 
+        verbose_name="Сотрудник"
+    )
     date = models.DateField()
     comment = models.TextField(blank=True)
     created_by = models.ForeignKey(
@@ -796,13 +808,29 @@ class DailyReport(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('department', 'date')
+        unique_together = ('department', 'employee', 'date')
         ordering = ['-date']
         verbose_name = 'Ежедневный отчёт'
         verbose_name_plural = 'Ежедневные отчёты'
 
     def __str__(self):
+        if self.employee:
+            return (f"{self.employee.get_full_name()} "
+                   f"({self.department}) — {self.date}")
         return f"{self.department} — {self.date}"
+    
+    @property
+    def is_individual(self):
+        """Проверяет, является ли отчет индивидуальным"""
+        return self.employee is not None
+    
+    @property
+    def display_name(self):
+        """Возвращает отображаемое название отчета"""
+        if self.is_individual:
+            return (f"Ежедневный отчёт сотрудника "
+                   f"{self.employee.get_full_name()}")
+        return f"Ежедневный отчёт отдела {self.department.name}"
 
 
 class DailyReportPhoto(models.Model):
