@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Заголовок -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-bug text-primary"></i>
+                        {{ project.name }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-person"></i>
+                        Создатель: {{ project.created_by.get_full_name }}
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-calendar"></i>
+                        {{ project.created_at|date:"d.m.Y H:i" }}
+                    </p>
+                </div>
+                <div>
+                    {% if can_create_feature %}
+                    <a href="{% url 'testing:feature_create' %}?project={{ project.pk }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Добавить функционал
+                    </a>
+                    {% endif %}
+                    {% if employee.position == 'admin' or project.created_by == employee %}
+                    <a href="{% url 'testing:testproject_edit' project.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil"></i>
+                        Редактировать
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Описание проекта -->
+            {% if project.description %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Описание проекта
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ project.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="text-primary display-6">{{ project.features_count }}</div>
+                            <div class="text-muted">Всего функционала</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="text-warning display-6">{{ project.active_features_count }}</div>
+                            <div class="text-muted">Активных</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="text-success display-6">
+                                {% for status_code, status_data in status_stats.items %}
+                                    {% if status_code == 'done' %}{{ status_data.count }}{% endif %}
+                                {% empty %}0{% endfor %}
+                            </div>
+                            <div class="text-muted">Завершено</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="text-danger display-6">
+                                {% for status_code, status_data in status_stats.items %}
+                                    {% if status_code == 'rework' %}{{ status_data.count }}{% endif %}
+                                {% empty %}0{% endfor %}
+                            </div>
+                            <div class="text-muted">На доработке</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Статистика по статусам -->
+            {% if status_stats %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart"></i>
+                        Статистика по статусам
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for status_code, status_data in status_stats.items %}
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <div class="text-center">
+                                <div class="badge bg-{% cycle 'primary' 'warning' 'success' 'danger' 'info' %} fs-6">
+                                    {{ status_data.count }}
+                                </div>
+                                <div class="text-muted small">{{ status_data.name }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Список функционала -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul"></i>
+                        Функционал проекта
+                    </h5>
+                    <span class="badge bg-primary">{{ features.count }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if features %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Название</th>
+                                    <th>Статус</th>
+                                    <th>Приоритет</th>
+                                    <th>Создатель</th>
+                                    <th>Замечания</th>
+                                    <th>Дата создания</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature in features %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'testing:feature_detail' feature.pk %}" class="text-decoration-none">
+                                            {{ feature.title|truncatechars:50 }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% cycle 'primary' 'warning' 'success' 'danger' 'info' %}">
+                                            {{ feature.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% cycle 'success' 'info' 'warning' 'danger' %}">
+                                            {{ feature.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ feature.created_by.get_full_name }}</td>
+                                    <td>
+                                        {% if feature.unresolved_comments_count > 0 %}
+                                        <span class="badge bg-danger">{{ feature.unresolved_comments_count }}</span>
+                                        {% else %}
+                                        <span class="text-muted">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ feature.created_at|date:"d.m.Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'testing:feature_detail' feature.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-bug display-4 text-muted"></i>
+                        <h5 class="text-muted mt-3">Нет функционала</h5>
+                        <p class="text-muted">Добавьте первый функционал для тестирования</p>
+                        {% if can_create_feature %}
+                        <a href="{% url 'testing:feature_create' %}?project={{ project.pk }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Добавить функционал
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -22,6 +22,7 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('shift_log.urls')),
+    path('testing/', include('testing.urls')),
 ]
 
 # Добавляем обработку медиа файлов в режиме разработки

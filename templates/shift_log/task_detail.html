@@ -71,6 +71,11 @@
                         <p>
                             {% if task.assigned_to %}
                                 {{ task.assigned_to.get_full_name }}
+                                {% if task.assigned_to.role %}
+                                    <br><small class="text-info">
+                                        <i class="bi bi-person-badge"></i> {{ task.assigned_to.get_role_display_name }}
+                                    </small>
+                                {% endif %}
                                 <br><small class="text-muted">{{ task.assigned_to.department.name }}</small>
                             {% else %}
                                 <span class="text-primary fw-bold">Задача для всего отдела</span>

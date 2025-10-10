@@ -29,9 +29,21 @@ class Employee(models.Model):
         ('admin', 'Администратор'),
     ]
 
+    ROLE_CHOICES = [
+        ('programmer', 'Программист'),
+        ('tester', 'Тестировщик'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     department = models.ForeignKey(Department, on_delete=models.CASCADE, verbose_name="Отдел")
     position = models.CharField(max_length=20, choices=POSITION_CHOICES, default='employee', verbose_name="Должность")
+    role = models.CharField(
+        max_length=20, 
+        choices=ROLE_CHOICES, 
+        null=True, 
+        blank=True, 
+        verbose_name="Роль"
+    )
     phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
     telegram_id = models.CharField(max_length=50, blank=True, verbose_name="Telegram ID")
     individual_report = models.BooleanField(
@@ -47,7 +59,8 @@ class Employee(models.Model):
         ordering = ['user__last_name', 'user__first_name']
 
     def __str__(self):
-        return f"{self.user.get_full_name()} - {self.department.name}"
+        role_display = f" ({self.get_role_display_name()})" if self.role else ""
+        return f"{self.user.get_full_name()}{role_display} - {self.department.name}"
 
     def get_full_name(self):
         """Возвращает полное имя сотрудника"""
@@ -184,6 +197,33 @@ class Employee(models.Model):
             'admin': 'Администратор',
         }
         return position_names.get(self.position, self.position)
+    
+    def get_role_display_name(self):
+        """Возвращает читаемое название роли"""
+        role_names = {
+            'programmer': 'Программист',
+            'tester': 'Тестировщик',
+        }
+        return role_names.get(self.role, self.role) if self.role else None
+    
+    @property
+    def is_programmer(self):
+        """Проверяет, является ли сотрудник программистом"""
+        return self.role == 'programmer'
+    
+    @property
+    def is_tester(self):
+        """Проверяет, является ли сотрудник тестировщиком"""
+        return self.role == 'tester'
+    
+    def get_full_role_display(self):
+        """Возвращает полное отображение должности и роли"""
+        position = self.get_position_display_name()
+        role = self.get_role_display_name()
+        
+        if role:
+            return f"{position} ({role})"
+        return position
 
 
 class ShiftType(models.Model):
@@ -674,10 +714,16 @@ class Notification(models.Model):
         ('shift_completed', 'Смена завершена'),
         ('task_completed', 'Задание завершено'),
         ('handover', 'Передача смены'),
+        ('feature_created', 'Функционал создан'),
+        ('feature_testing', 'Функционал на тестировании'),
+        ('feature_rework', 'Функционал на доработке'),
+        ('feature_completed', 'Функционал выполнен'),
+        ('feature_done', 'Функционал завершен'),
+        ('feature_comment_added', 'Добавлено замечание'),
     ]
 
     recipient = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Получатель")
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPE_CHOICES, verbose_name="Тип уведомления")
+    notification_type = models.CharField(max_length=25, choices=NOTIFICATION_TYPE_CHOICES, verbose_name="Тип уведомления")
     title = models.CharField(max_length=200, verbose_name="Заголовок")
     message = models.TextField(verbose_name="Сообщение")
     
@@ -701,6 +747,12 @@ class Notification(models.Model):
             'shift_completed': 'info',
             'task_completed': 'success',
             'handover': 'warning',
+            'feature_created': 'info',
+            'feature_testing': 'primary',
+            'feature_rework': 'warning',
+            'feature_completed': 'success',
+            'feature_done': 'success',
+            'feature_comment_added': 'secondary',
         }
         return colors.get(self.notification_type, 'secondary')
     

@@ -24,18 +24,21 @@ class EmployeeForm(forms.ModelForm):
     """Форма сотрудника"""
     class Meta:
         model = Employee
-        fields = ['department', 'position', 'phone', 'telegram_id', 'individual_report', 'is_active']
+        fields = ['department', 'position', 'role', 'phone', 'telegram_id', 'individual_report', 'is_active']
         widgets = {
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'telegram_id': forms.TextInput(attrs={'class': 'form-control'}),
             'individual_report': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'role': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'individual_report': 'Индивидуальный отчет',
+            'role': 'Роль',
         }
         help_texts = {
             'individual_report': ('Если включено, сотрудник будет вести '
                                 'свой ежедневный отчет'),
+            'role': 'Дополнительная роль сотрудника (программист или тестировщик)',
         }
 
 

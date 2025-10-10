@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Тестовые проекты{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-bug text-primary"></i>
+                    Тестовые проекты
+                </h1>
+                {% if can_create_project %}
+                <a href="{% url 'testing:testproject_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Создать проект
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Фильтры -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            {{ filter_form.created_by.label_tag }}
+                            {{ filter_form.created_by }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ filter_form.is_active.label_tag }}
+                            {{ filter_form.is_active }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ filter_form.search.label_tag }}
+                            {{ filter_form.search }}
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-search"></i>
+                                Фильтр
+                            </button>
+                            <a href="{% url 'testing:testproject_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Сброс
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Список проектов -->
+            {% if projects %}
+            <div class="row">
+                {% for project in projects %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">
+                                    <a href="{% url 'testing:testproject_detail' project.pk %}" class="text-decoration-none">
+                                        {{ project.name }}
+                                    </a>
+                                </h5>
+                                <span class="badge {% if project.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if project.is_active %}Активен{% else %}Неактивен{% endif %}
+                                </span>
+                            </div>
+                            
+                            {% if project.description %}
+                            <p class="card-text text-muted small">
+                                {{ project.description|truncatewords:20 }}
+                            </p>
+                            {% endif %}
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="text-primary fw-bold">{{ project.features_count }}</div>
+                                    <div class="text-muted small">Функционал</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-warning fw-bold">{{ project.active_features_count }}</div>
+                                    <div class="text-muted small">Активных</div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i>
+                                    {{ project.created_by.get_full_name }}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i>
+                                    {{ project.created_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'testing:testproject_detail' project.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i>
+                                Подробнее
+                            </a>
+                            {% if employee.position == 'admin' or project.created_by == employee %}
+                            <a href="{% url 'testing:testproject_edit' project.pk %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                                Редактировать
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+            {% if is_paginated %}
+            <nav aria-label="Навигация по страницам">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; Первая</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bug display-1 text-muted"></i>
+                <h3 class="text-muted mt-3">Нет тестовых проектов</h3>
+                <p class="text-muted">Создайте первый тестовый проект для начала работы</p>
+                {% if can_create_project %}
+                <a href="{% url 'testing:testproject_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Создать проект
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

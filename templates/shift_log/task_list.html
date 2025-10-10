@@ -153,6 +153,11 @@
                                         <td>
                                             {% if task.assigned_to %}
                                                 <small>{{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}</small>
+                                                {% if task.assigned_to.role %}
+                                                    <br><small class="text-info">
+                                                        <i class="bi bi-person-badge"></i> {{ task.assigned_to.get_role_display_name }}
+                                                    </small>
+                                                {% endif %}
                                             {% else %}
                                                 <small class="text-primary fw-bold">Задача для всего отдела</small>
                                             {% endif %}
@@ -249,6 +254,11 @@
                                     <td>
                                         {% if task.assigned_to %}
                                             {{ task.assigned_to.get_full_name }}
+                                            {% if task.assigned_to.role %}
+                                                <br><small class="text-info">
+                                                    <i class="bi bi-person-badge"></i> {{ task.assigned_to.get_role_display_name }}
+                                                </small>
+                                            {% endif %}
                                         {% else %}
                                             <span class="text-primary fw-bold">Задача для всего отдела</span>
                                         {% endif %}

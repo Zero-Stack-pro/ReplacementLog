@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Функционал для тестирования{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-bug text-primary"></i>
+                    Функционал для тестирования
+                </h1>
+                {% if can_create_feature %}
+                <a href="{% url 'testing:feature_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Создать функционал
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Фильтры -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            {{ filter_form.test_project.label_tag }}
+                            {{ filter_form.test_project }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ filter_form.priority.label_tag }}
+                            {{ filter_form.priority }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ filter_form.created_by.label_tag }}
+                            {{ filter_form.created_by }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ filter_form.search.label_tag }}
+                            {{ filter_form.search }}
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <a href="{% url 'testing:feature_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Список функционала -->
+            {% if features %}
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Название</th>
+                                    <th>Проект</th>
+                                    <th>Приоритет</th>
+                                    <th>Создатель</th>
+                                    <th>Замечания</th>
+                                    <th>Дата создания</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature in features %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'testing:feature_detail' feature.pk %}" class="text-decoration-none fw-bold">
+                                            {{ feature.title|truncatechars:60 }}
+                                        </a>
+                                        {% if feature.description %}
+                                        <br>
+                                        <small class="text-muted">{{ feature.description|truncatechars:80 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'testing:testproject_detail' feature.test_project.pk %}" class="text-decoration-none">
+                                            {{ feature.test_project.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% cycle 'success' 'info' 'warning' 'danger' %}">
+                                            {{ feature.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ feature.created_by.get_full_name }}</td>
+                                    <td>
+                                        {% if feature.unresolved_comments_count > 0 %}
+                                        <span class="badge bg-danger">{{ feature.unresolved_comments_count }}</span>
+                                        {% else %}
+                                        <span class="text-muted">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ feature.created_at|date:"d.m.Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'testing:feature_detail' feature.pk %}" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if feature.can_be_edited_by %}
+                                            <a href="{% url 'testing:feature_update' feature.pk %}" class="btn btn-outline-secondary" title="Редактировать">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Пагинация -->
+            {% if is_paginated %}
+            <nav aria-label="Навигация по страницам" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; Первая</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bug display-1 text-muted"></i>
+                <h3 class="text-muted mt-3">Нет функционала для тестирования</h3>
+                <p class="text-muted">Создайте первый функционал для начала работы</p>
+                {% if can_create_feature %}
+                <a href="{% url 'testing:feature_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Создать функционал
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
