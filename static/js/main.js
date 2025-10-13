@@ -78,6 +78,91 @@ function initNotifications() {
         });
     }
 
+    // Обновление секции уведомлений на дашборде
+    function updateDashboardNotifications() {
+        // Обновляем только если мы на дашборде
+        if (window.location.pathname === '/' || window.location.pathname.includes('dashboard')) {
+            // Обновляем счетчик и выпадающее меню
+            updateNotificationCount();
+            loadNotifications();
+
+            // Обновляем секцию уведомлений на дашборде только при необходимости
+            // (например, после отметки уведомлений)
+        }
+    }
+
+    // Обновление секции уведомлений на дашборде через AJAX
+    function updateDashboardNotificationsSection() {
+        console.log('Обновляем секцию уведомлений на дашборде...');
+
+        $.ajax({
+            url: '/api/notifications/recent/?t=' + new Date().getTime(),
+            method: 'GET',
+            cache: false,
+            success: function (response) {
+                console.log('Получены уведомления:', response);
+
+                // Ищем карточку уведомлений по более точному селектору
+                var notificationsCard = $('.card').filter(function () {
+                    var headerText = $(this).find('.card-header').text();
+                    console.log('Проверяем карточку:', headerText);
+                    return headerText.includes('Уведомления');
+                });
+
+                console.log('Найдена карточка уведомлений:', notificationsCard.length);
+
+                if (notificationsCard.length === 0) {
+                    console.log('Карточка уведомлений не найдена, пробуем другой селектор...');
+                    // Попробуем найти по классу или другим признакам
+                    notificationsCard = $('.card').has('.card-header:contains("Уведомления")');
+                    console.log('Альтернативный поиск:', notificationsCard.length);
+                }
+
+                if (notificationsCard.length === 0) {
+                    console.log('Карточка уведомлений не найдена, пропускаем обновление');
+                    return;
+                }
+
+                var cardBody = notificationsCard.find('.card-body');
+                console.log('Найден card-body:', cardBody.length);
+
+                if (response.notifications && response.notifications.length > 0) {
+                    var notificationsHtml = '';
+                    response.notifications.forEach(function (notification) {
+                        var isRead = notification.is_read;
+                        var statusClass = isRead ? 'text-muted' : 'fw-bold';
+                        var newBadge = isRead ? '' : '<span class="badge bg-danger">Новое</span>';
+                        var markReadButton = isRead ? '' :
+                            '<button class="btn btn-sm btn-outline-success mark-read ms-2" ' +
+                            'data-notification-id="' + notification.id + '" ' +
+                            'title="Отметить как прочитанное">' +
+                            '<i class="bi bi-check-lg"></i></button>';
+
+                        notificationsHtml +=
+                            '<div class="notification-item mb-3 p-3 border-start border-warning border-4 bg-light">' +
+                            '<div class="d-flex justify-content-between align-items-start">' +
+                            '<div class="flex-grow-1">' +
+                            '<h6 class="mb-1 ' + statusClass + '">' + notification.title + '</h6>' +
+                            '<p class="mb-2 text-muted">' + notification.message + '</p>' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                            '<small class="text-muted"><i class="bi bi-clock"></i> ' + notification.sent_at + ' назад</small>' +
+                            '<div class="d-flex align-items-center gap-2">' + newBadge + '</div>' +
+                            '</div></div>' + markReadButton + '</div></div>';
+                    });
+
+                    cardBody.html(notificationsHtml);
+                    console.log('Уведомления обновлены');
+                } else {
+                    cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
+                    console.log('Показываем сообщение об отсутствии уведомлений');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log('Ошибка при загрузке уведомлений:', xhr, status, error);
+            }
+        });
+    }
+
     // Отметить уведомление как прочитанное
     $(document).on('click', '.mark-read', function () {
         var notificationId = $(this).data('notification-id');
@@ -102,17 +187,15 @@ function initNotifications() {
                         notificationElement.fadeOut(300, function () {
                             $(this).remove();
 
-                            // Проверяем, остались ли еще уведомления
-                            var remainingNotifications = $('.notification-item').length;
+                            // Проверяем, остались ли еще уведомления в секции уведомлений
+                            var notificationsCard = button.closest('.card');
+                            var remainingNotifications = notificationsCard.find('.notification-item').length;
                             console.log('Оставшиеся уведомления:', remainingNotifications);
                             if (remainingNotifications === 0) {
-                                // Если уведомлений больше нет, показываем сообщение только в карточке уведомлений
-                                var notificationsCard = $('#notifications-card');
-                                if (notificationsCard.length > 0) {
-                                    var cardBody = notificationsCard.find('.card-body');
-                                    if (cardBody.length > 0) {
-                                        cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
-                                    }
+                                // Если уведомлений больше нет, показываем сообщение
+                                var cardBody = $('.card-body');
+                                if (cardBody.length > 0) {
+                                    cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
                                 }
                             }
                         });
@@ -127,6 +210,10 @@ function initNotifications() {
                     setTimeout(function () {
                         updateNotificationCount();
                         loadNotifications();
+                        // Обновляем секцию уведомлений только если мы на дашборде
+                        if (window.location.pathname === '/' || window.location.pathname.includes('dashboard')) {
+                            updateDashboardNotificationsSection();
+                        }
                     }, 100);
                 }
             },
@@ -215,6 +302,10 @@ function initNotifications() {
                     setTimeout(function () {
                         updateNotificationCount();
                         loadNotifications();
+                        // Обновляем секцию уведомлений только если мы на дашборде
+                        if (window.location.pathname === '/' || window.location.pathname.includes('dashboard')) {
+                            updateDashboardNotificationsSection();
+                        }
                     }, 100);
                 } else {
                     showAlert('Ошибка при отметке уведомлений: ' + (response.error || 'Неизвестная ошибка'), 'danger');
@@ -241,6 +332,13 @@ function initNotifications() {
     // Инициализация
     updateNotificationCount();
     loadNotifications();
+
+    // Проверяем, есть ли уведомления на дашборде
+    // Убираем автоматическое обновление при загрузке, чтобы не перезаписывать серверные данные
+    // if (window.location.pathname === '/' || window.location.pathname.includes('dashboard')) {
+    //     console.log('Мы на дашборде, проверяем уведомления...');
+    //     updateDashboardNotificationsSection();
+    // }
 
     // Дополнительная проверка привязки обработчика
     console.log('Количество кнопок .mark-all-read на странице:', $('.mark-all-read').length);
