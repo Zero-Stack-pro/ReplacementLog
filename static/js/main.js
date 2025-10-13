@@ -192,8 +192,8 @@ function initNotifications() {
                             var remainingNotifications = notificationsCard.find('.notification-item').length;
                             console.log('Оставшиеся уведомления:', remainingNotifications);
                             if (remainingNotifications === 0) {
-                                // Если уведомлений больше нет, показываем сообщение только в карточке уведомлений
-                                var cardBody = notificationsCard.find('.card-body');
+                                // Если уведомлений больше нет, показываем сообщение
+                                var cardBody = $('.card-body');
                                 if (cardBody.length > 0) {
                                     cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
                                 }
@@ -281,8 +281,14 @@ function initNotifications() {
                     allNotifications.fadeOut(300, function () {
                         $(this).remove();
 
-                        // Показываем сообщение об отсутствии уведомлений
-                        cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
+                        // Показываем сообщение об отсутствии уведомлений только в карточке уведомлений
+                        var notificationsCard = $('#notifications-card');
+                        if (notificationsCard.length > 0) {
+                            var notificationsCardBody = notificationsCard.find('.card-body');
+                            if (notificationsCardBody.length > 0) {
+                                notificationsCardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
+                            }
+                        }
                     });
 
                     // Скрываем кнопку "Отметить все как прочитанные"
@@ -388,8 +394,14 @@ function initNotifications() {
                         allNotifications.fadeOut(300, function () {
                             $(this).remove();
 
-                            // Показываем сообщение об отсутствии уведомлений
-                            cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
+                            // Показываем сообщение об отсутствии уведомлений только в карточке уведомлений
+                            var notificationsCard = $('#notifications-card');
+                            if (notificationsCard.length > 0) {
+                                var notificationsCardBody = notificationsCard.find('.card-body');
+                                if (notificationsCardBody.length > 0) {
+                                    notificationsCardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
+                                }
+                            }
                         });
 
                         // Скрываем кнопку "Отметить все как прочитанные"

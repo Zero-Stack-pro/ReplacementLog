@@ -994,40 +994,10 @@ def api_task_status_update(request, task_id):
                     f'Status changed to {new_status}'
                 )
                 
-                # Создаем уведомления для заинтересованных лиц
-                from .utils import send_notification
-
-                # Получаем отображаемые названия статусов
-                status_choices = dict(Task.STATUS_CHOICES)
-                new_status_display = status_choices.get(new_status, new_status)
-                
-                # Уведомление для создателя задачи
-                if task.created_by != employee:
-                    send_notification(
-                        task.created_by,
-                        'task_completed' if new_status == 'completed' else 'task_assigned',
-                        f'Статус задачи изменен: {task.title}',
-                        f'Статус задачи "{task.title}" изменен на "{new_status_display}"'
-                    )
-                
-            # Уведомление для руководителя отдела (если он не тот, кто изменил статус)
-            department_supervisor = Employee.objects.filter(
-                department=task.department,
-                position='supervisor',
-                is_active=True
-            ).first()
-            if department_supervisor and department_supervisor != employee:
-                send_notification(
-                    department_supervisor,
-                    'task_completed' if new_status == 'completed' else 'task_assigned',
-                    f'Статус задачи изменен: {task.title}',
-                    f'Статус задачи "{task.title}" в отделе '
-                    f'{task.department.name} изменен на "{new_status_display}"'
-                )
-                
-                return JsonResponse({'success': True})
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid status'})
+                # Уведомления создаются через TaskStatusUpdateView
+                # чтобы избежать дублирования уведомлений
+            
+            return JsonResponse({'success': True})
                 
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON'})
@@ -1166,36 +1136,33 @@ class TaskStatusUpdateView(LoginRequiredMixin, View):
             # Создаем уведомления для заинтересованных лиц
             from .utils import send_notification
 
-            # Уведомление для создателя задачи
+            # Собираем всех получателей уведомлений, чтобы избежать дублирования
+            notification_recipients = set()
+            
+            # Добавляем создателя задачи (если он не тот, кто изменил статус)
             if task.created_by != employee:
-                send_notification(
-                    task.created_by,
-                    'task_completed' if new_status == 'completed' else 'task_assigned',
-                    f'Статус задачи изменен: {task.title}',
-                    f'Статус задачи "{task.title}" изменен с "{old_status_display}" на "{new_status_display}"{f" с комментарием: {comment}" if comment else ""}'
-                )
+                notification_recipients.add(task.created_by)
             
-            # Уведомление для назначенного сотрудника (если он не тот, кто изменил статус)
+            # Добавляем назначенного сотрудника (если он не тот, кто изменил статус)
             if task.assigned_to != employee:
-                send_notification(
-                    task.assigned_to,
-                    'task_completed' if new_status == 'completed' else 'task_assigned',
-                    f'Статус задачи изменен: {task.title}',
-                    f'Статус задачи "{task.title}" изменен с "{old_status_display}" на "{new_status_display}"{f" с комментарием: {comment}" if comment else ""}'
-                )
+                notification_recipients.add(task.assigned_to)
             
-            # Уведомление для руководителя отдела (если он не тот, кто изменил статус)
+            # Добавляем руководителя отдела (если он не тот, кто изменил статус)
             department_supervisor = Employee.objects.filter(
                 department=task.department,
                 position='supervisor',
                 is_active=True
             ).first()
             if department_supervisor and department_supervisor != employee:
+                notification_recipients.add(department_supervisor)
+            
+            # Отправляем уведомления всем уникальным получателям
+            for recipient in notification_recipients:
                 send_notification(
-                    department_supervisor,
+                    recipient,
                     'task_completed' if new_status == 'completed' else 'task_assigned',
                     f'Статус задачи изменен: {task.title}',
-                    f'Статус задачи "{task.title}" в отделе {task.department.name} изменен с "{old_status_display}" на "{new_status_display}"{f" с комментарием: {comment}" if comment else ""}'
+                    f'Статус задачи "{task.title}" изменен с "{old_status_display}" на "{new_status_display}"{f" с комментарием: {comment}" if comment else ""}'
                 )
             
             messages.success(request, 'Статус задания успешно обновлен')

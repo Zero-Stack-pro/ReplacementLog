@@ -25,14 +25,14 @@ class DepartmentAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = [
-        'user', 'department', 'position', 'individual_report', 'is_active', 'created_at'
+        'user', 'department', 'position', 'role', 'individual_report', 'is_active', 'created_at'
     ]
-    list_filter = ['department', 'position', 'individual_report', 'is_active', 'created_at']
+    list_filter = ['department', 'position', 'role', 'individual_report', 'is_active', 'created_at']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone']
     raw_id_fields = ['user']
     fieldsets = (
         ('Основная информация', {
-            'fields': ('user', 'department', 'position', 'phone', 'telegram_id')
+            'fields': ('user', 'department', 'position', 'role', 'phone', 'telegram_id')
         }),
         ('Настройки отчетов', {
             'fields': ('individual_report',),

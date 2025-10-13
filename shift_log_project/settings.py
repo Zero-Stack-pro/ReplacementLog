@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'shift_log',
+    'testing',
     'crispy_forms',
     'crispy_bootstrap5',
     'django_filters',
