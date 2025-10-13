@@ -400,6 +400,13 @@ class FeatureService:
             
             logger.info(f"Замечание {comment.id} возвращено на доработку сотрудником {employee.user.username}")
             return comment
+
+    @staticmethod
+    def return_feature_to_rework(
+        feature: Feature,
+        employee: Employee,
+        comment: str = ""
+    ) -> Feature:
         """
         Возвращает функционал на доработку
         
@@ -423,59 +430,6 @@ class FeatureService:
             employee=employee,
             comment=comment or "Возвращено на доработку тестировщиком"
         )
-
-    @staticmethod
-    def return_comment_to_rework(
-        feature: Feature,
-        comment: FeatureComment,
-        employee: Employee,
-        reason: str
-    ) -> FeatureComment:
-        """
-        Возвращает конкретное замечание на доработку
-        
-        Args:
-            feature: Функционал
-            comment: Замечание для возврата на доработку
-            employee: Тестировщик/администратор
-            reason: Причина возврата на доработку
-            
-        Returns:
-            FeatureComment: Обновленное замечание
-        """
-        if not (employee.role == 'tester' or employee.position == 'admin'):
-            raise PermissionError("Только тестировщики и администраторы могут возвращать замечания на доработку")
-        
-        if not reason.strip():
-            raise ValueError("Причина возврата на доработку обязательна")
-        
-        with transaction.atomic():
-            # Возвращаем замечание на доработку
-            comment.return_to_rework(employee, reason)
-            
-            # Добавляем запись в историю замечания
-            FeatureCommentHistory.objects.create(
-                comment=comment,
-                action='returned_to_rework',
-                changed_by=employee,
-                reason=reason.strip()
-            )
-            
-            # Логируем действие
-            log_activity(
-                user=employee.user,
-                action='comment_returned_to_rework',
-                model_name='FeatureComment',
-                object_id=comment.id,
-                object_repr=str(comment),
-                description=f"Замечание возвращено на доработку: {reason[:50]}..."
-            )
-            
-            # Отправляем уведомления
-            NotificationService.notify_comment_returned_to_rework(feature, comment, employee, reason)
-            
-            logger.info(f"Замечание {comment.id} возвращено на доработку сотрудником {employee.user.username}")
-            return comment
 
     @staticmethod
     def can_create_feature(employee: Employee) -> bool:
@@ -644,52 +598,6 @@ class NotificationService:
                            f'Тип: {comment.get_comment_type_display()}'
                 )
 
-        @staticmethod
-        def notify_comment_returned_to_rework(feature: Feature, comment: FeatureComment, returned_by: Employee, reason: str) -> None:
-            """Отправляет уведомления о возврате замечания на доработку"""
-            # Уведомляем создателя функционала (программиста)
-            if feature.created_by != returned_by:
-                send_notification(
-                    recipient=feature.created_by,
-                    notification_type='feature_rework',
-                    title=f'Замечание возвращено на доработку: {feature.title}',
-                    message=f'Замечание к функционалу "{feature.title}" возвращено на доработку тестировщиком {returned_by.get_full_name()}. '
-                           f'Причина: {reason}. '
-                           f'Текст замечания: {comment.comment[:200]}{"..." if len(comment.comment) > 200 else ""}'
-                )
-            
-            # Уведомляем администраторов
-            admins = Employee.objects.filter(position='admin', is_active=True)
-            for admin in admins:
-                if admin != returned_by:
-                    send_notification(
-                        recipient=admin,
-                        notification_type='feature_rework',
-                        title=f'Замечание возвращено на доработку: {feature.title}',
-                        message=f'Замечание к функционалу "{feature.title}" возвращено на доработку тестировщиком {returned_by.get_full_name()}. '
-                               f'Причина: {reason}'
-                    )
-        """Отправляет уведомления о решении замечания"""
-        # Уведомляем автора замечания (если это не тот, кто решил)
-        if comment.author != resolved_by:
-            send_notification(
-                recipient=comment.author,
-                notification_type='feature_comment_added',
-                title=f'Замечание решено: {feature.title}',
-                message=f'Замечание к функционалу "{feature.title}" отмечено как решенное программистом {resolved_by.get_full_name()}. '
-                       f'Текст замечания: {comment.comment[:200]}{"..." if len(comment.comment) > 200 else ""}'
-            )
-        
-        # Уведомляем администраторов
-        admins = Employee.objects.filter(position='admin', is_active=True)
-        for admin in admins:
-            if admin != resolved_by:
-                send_notification(
-                    recipient=admin,
-                    notification_type='feature_comment_added',
-                    title=f'Замечание решено: {feature.title}',
-                    message=f'Замечание к функционалу "{feature.title}" отмечено как решенное программистом {resolved_by.get_full_name()}'
-                )
 
     @staticmethod
     def notify_comment_returned_to_rework(
