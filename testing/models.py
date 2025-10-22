@@ -218,8 +218,8 @@ class FeatureComment(models.Model):
     
     COMMENT_TYPE_CHOICES = [
         ('remark', 'Замечание'),
-        ('approval', 'Одобрение'),
-        ('clarification', 'Уточнение'),
+        ('question', 'Вопрос'),
+        ('offers', 'Предложение'),
     ]
 
     STATUS_CHOICES = [
