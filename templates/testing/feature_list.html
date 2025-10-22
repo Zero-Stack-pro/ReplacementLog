@@ -3,6 +3,46 @@
 
 {% block title %}Функционал для тестирования{% endblock %}
 
+{% block extra_css %}
+<style>
+.feature-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.feature-table th,
+.feature-table td {
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+}
+
+.feature-table .title-cell {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+.feature-table .center-cell {
+    text-align: center;
+}
+
+.feature-table .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.feature-table .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.filter-btn-group .btn-group-sm .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -21,135 +61,159 @@
             </div>
 
             <!-- Фильтры -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="get" class="row g-3">
+            <div class="features-filter-form">
+                <h5 class="form-title">
+                    <i class="bi bi-funnel"></i>
+                    Фильтры функционала
+                </h5>
+                <form method="get" class="row g-3 align-items-end">
                         <div class="col-md-3">
-                            {{ filter_form.test_project.label_tag }}
-                            {{ filter_form.test_project }}
+                            <label for="id_test_project" class="form-label">Проект:</label>
+                            <select name="test_project" class="form-select" id="id_test_project">
+                                <option value="" selected="">Все проекты</option>
+                                <option value="3">Метролог (Евгений Новиченко)</option>
+                                <option value="2">Сменный журнал (Евгений Новиченко)</option>
+                                <option value="1">Центр сотрудника (Евгений Новиченко)</option>
+                            </select>
                         </div>
                         <div class="col-md-3">
-                            {{ filter_form.priority.label_tag }}
-                            {{ filter_form.priority }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ filter_form.created_by.label_tag }}
-                            {{ filter_form.created_by }}
+                            <label for="id_priority" class="form-label">Приоритет:</label>
+                            <select name="priority" class="form-select" id="id_priority">
+                                <option value="" selected="">Все приоритеты</option>
+                                <option value="1">Низкий</option>
+                                <option value="2">Средний</option>
+                                <option value="3">Высокий</option>
+                                <option value="4">Критический</option>
+                            </select>
                         </div>
                         <div class="col-md-3">
-                            {{ filter_form.search.label_tag }}
-                            {{ filter_form.search }}
+                            <label for="id_created_by" class="form-label">Создатель:</label>
+                            <select name="created_by" class="form-select" id="id_created_by">
+                                <option value="" selected="">Все создатели</option>
+                                <option value="14"> - Веб-тест отдел</option>
+                                <option value="4"> - Служба КИПиА(ОП Темрюк)</option>
+                                <option value="13"> - Тестовый отдел</option>
+                                <option value="6"> - Служба КИПиА(ПП Старотитаровская)</option>
+                                <option value="9">Дмитрий Асьянов - Цифровые технологии</option>
+                                <option value="10">Дмитрий Брыляков - Цифровые технологии</option>
+                                <option value="2">Дмитрий Гребенюк - Цифровые технологии</option>
+                                <option value="5">Дмитрий Карасёв - Служба КИПиА(ПП Старотитаровская)</option>
+                                <option value="12">Евгений Кот - Цифровые технологии</option>
+                                <option value="3">Евгений Кравец - Служба КИПиА(ОП Темрюк)</option>
+                                <option value="8">Марина Мещанова (Тестировщик) - Цифровые технологии</option>
+                                <option value="11">Александр Некрасов - Цифровые технологии</option>
+                                <option value="1">Евгений Новиченко (Программист) - Цифровые технологии</option>
+                                <option value="7">Иван Якименко - Служба КИПиА(ПП Старотитаровская)</option>
+                            </select>
                         </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="submit" class="btn btn-outline-primary me-2">
-                                <i class="bi bi-search"></i>
-                            </button>
-                            <a href="{% url 'testing:feature_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i>
-                            </a>
+                        <div class="col-md-3">
+                            <label for="id_search" class="form-label">Поиск:</label>
+                            <input type="text" name="search" class="form-control" placeholder="Поиск по названию или описанию..." id="id_search">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="btn-group btn-group-sm filter-btn-group">
+                                <button type="submit" class="btn btn-outline-primary" title="Применить фильтры">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                <a href="{% url 'testing:feature_list' %}" class="btn btn-outline-secondary" title="Сбросить фильтры">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
                         </div>
                     </form>
-                </div>
             </div>
 
-            <!-- Список функционала -->
-            {% if features %}
-            <div class="card">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Название</th>
-                                    <th>Проект</th>
-                                    <th>Приоритет</th>
-                                    <th>Создатель</th>
-                                    <th>Замечания</th>
-                                    <th>Дата создания</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for feature in features %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'testing:feature_detail' feature.pk %}" class="text-decoration-none fw-bold">
-                                            {{ feature.title|truncatechars:60 }}
-                                        </a>
-                                        {% if feature.description %}
-                                        <br>
-                                        <small class="text-muted">{{ feature.description|truncatechars:80 }}</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'testing:testproject_detail' feature.test_project.pk %}" class="text-decoration-none">
-                                            {{ feature.test_project.name }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{% cycle 'success' 'info' 'warning' 'danger' %}">
-                                            {{ feature.get_priority_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ feature.created_by.get_full_name }}</td>
-                                    <td>
-                                        {% if feature.unresolved_comments_count > 0 %}
-                                        <span class="badge bg-danger">{{ feature.unresolved_comments_count }}</span>
-                                        {% else %}
-                                        <span class="text-muted">0</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ feature.created_at|date:"d.m.Y" }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'testing:feature_detail' feature.pk %}" class="btn btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
+            <!-- Список функционала по проектам -->
+            {% if features_by_project %}
+                {% for project, features in features_by_project.items %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-folder text-primary"></i>
+                                <a href="{% url 'testing:testproject_detail' project.pk %}" class="text-decoration-none">
+                                    {{ project.name }}
+                                </a>
+                                <span class="badge bg-secondary ms-2">{{ features|length }}</span>
+                            </h5>
+                            <div class="text-muted small">
+                                <i class="bi bi-person"></i> {{ project.created_by.get_full_name }}
+                                {% if project.description %}
+                                <br><small>{{ project.description|truncatechars:100 }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 feature-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 35%;">Название</th>
+                                        <th style="width: 10%;">Статус</th>
+                                        <th style="width: 10%;">Приоритет</th>
+                                        <th style="width: 15%;">Создатель</th>
+                                        <th style="width: 8%;">Замечания</th>
+                                        <th style="width: 12%;">Дата создания</th>
+                                        <th style="width: 10%;">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for feature in features %}
+                                    <tr class="feature-row" data-feature-url="{% url 'testing:feature_detail' feature.pk %}" style="cursor: pointer;">
+                                        <td class="title-cell">
+                                            <a href="{% url 'testing:feature_detail' feature.pk %}" class="text-decoration-none fw-bold">
+                                                {{ feature.title|truncatechars:50 }}
                                             </a>
-                                            {% if feature.can_be_edited_by %}
-                                            <a href="{% url 'testing:feature_update' feature.pk %}" class="btn btn-outline-secondary" title="Редактировать">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
+                                            {% if feature.description %}
+                                            <br>
+                                            <small class="text-muted">{{ feature.description|truncatechars:60 }}</small>
                                             {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="center-cell">
+                                            <span class="badge bg-{% if feature.status == 'new' %}secondary{% elif feature.status == 'testing' %}info{% elif feature.status == 'rework' %}warning{% elif feature.status == 'completed' %}success{% elif feature.status == 'done' %}dark{% endif %}">
+                                                {{ feature.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="center-cell">
+                                            <span class="badge bg-{% if feature.priority == 1 %}success{% elif feature.priority == 2 %}info{% elif feature.priority == 3 %}warning{% elif feature.priority == 4 %}danger{% endif %}">
+                                                {{ feature.get_priority_display }}
+                                            </span>
+                                        </td>
+                                        <td class="title-cell">
+                                            <small>{{ feature.created_by.get_full_name }}</small>
+                                        </td>
+                                        <td class="center-cell">
+                                            {% if feature.unresolved_comments_count > 0 %}
+                                            <span class="badge bg-danger">{{ feature.unresolved_comments_count }}</span>
+                                            {% else %}
+                                            <span class="text-muted">0</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="center-cell">
+                                            <small>{{ feature.created_at|date:"d.m.Y" }}</small>
+                                        </td>
+                                        <td class="center-cell">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'testing:feature_detail' feature.pk %}" class="btn btn-outline-primary" title="Просмотр">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                {% if feature.can_be_edited_by %}
+                                                <a href="{% url 'testing:feature_update' feature.pk %}" class="btn btn-outline-secondary" title="Редактировать">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+                {% endfor %}
 
-            <!-- Пагинация -->
-            {% if is_paginated %}
-            <nav aria-label="Навигация по страницам" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1">&laquo; Первая</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
-                    </li>
-                    {% endif %}
-                    
-                    <li class="page-item active">
-                        <span class="page-link">
-                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-                        </span>
-                    </li>
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя &raquo;</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
 
             {% else %}
             <div class="text-center py-5">
@@ -167,4 +231,38 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка кликов по строкам таблицы фич
+    const featureRows = document.querySelectorAll('.feature-row');
+    
+    featureRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Проверяем, что клик не по ссылке или кнопке
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.closest('button')) {
+                return;
+            }
+            
+            // Получаем URL из data-атрибута
+            const featureUrl = this.getAttribute('data-feature-url');
+            if (featureUrl) {
+                window.location.href = featureUrl;
+            }
+        });
+        
+        // Добавляем эффект наведения
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+            this.style.transform = 'scale(1.01)';
+            this.style.transition = 'all 0.2s ease';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.transform = '';
+        });
+    });
+});
+</script>
 {% endblock %}

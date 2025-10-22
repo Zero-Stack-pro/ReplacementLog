@@ -23,6 +23,7 @@ urlpatterns = [
     path('features/<int:pk>/status/', views.FeatureUpdateStatusView.as_view(), name='feature_update_status'),
     path('features/<int:pk>/comment/', views.FeatureAddCommentView.as_view(), name='feature_add_comment'),
     path('features/<int:pk>/comment/<int:comment_id>/resolve/', views.FeatureResolveCommentView.as_view(), name='feature_resolve_comment'),
+    path('features/<int:pk>/comment/<int:comment_id>/complete/', views.FeatureCommentCompleteView.as_view(), name='feature_comment_complete'),
     path('features/<int:pk>/comment/<int:comment_id>/return-to-rework/', views.FeatureCommentReturnToReworkView.as_view(), name='feature_comment_return_to_rework'),
     path('features/<int:pk>/return-to-rework/', views.FeatureReturnToReworkView.as_view(), name='feature_return_to_rework'),
     

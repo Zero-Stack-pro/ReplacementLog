@@ -222,6 +222,14 @@ class FeatureComment(models.Model):
         ('clarification', 'Уточнение'),
     ]
 
+    STATUS_CHOICES = [
+        ('open', 'Открыто'),
+        ('in_progress', 'В работе'),
+        ('resolved', 'Решено'),
+        ('completed', 'Завершено'),
+        ('rework', 'На доработке'),
+    ]
+
     feature = models.ForeignKey(
         Feature,
         on_delete=models.CASCADE,
@@ -247,16 +255,29 @@ class FeatureComment(models.Model):
         verbose_name="Тип замечания",
         help_text="Тип комментария"
     )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='open',
+        verbose_name="Статус замечания",
+        help_text="Текущий статус замечания"
+    )
     is_resolved = models.BooleanField(
         default=False,
         verbose_name="Решено",
-        help_text="Решено ли замечание"
+        help_text="Решено ли замечание (устаревшее поле, используйте status)"
     )
     rework_reason = models.TextField(
         blank=True,
         null=True,
         verbose_name="Причина возврата на доработку",
         help_text="Причина возврата замечания на доработку"
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата завершения",
+        help_text="Дата завершения замечания"
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -281,12 +302,53 @@ class FeatureComment(models.Model):
         """Проверяет, является ли замечание одобрением"""
         return self.comment_type == 'approval'
 
+    @property
+    def is_open(self) -> bool:
+        """Проверяет, открыто ли замечание"""
+        return self.status == 'open'
+
+    @property
+    def is_in_progress(self) -> bool:
+        """Проверяет, находится ли замечание в работе"""
+        return self.status == 'in_progress'
+
+    @property
+    def is_resolved_status(self) -> bool:
+        """Проверяет, решено ли замечание"""
+        return self.status == 'resolved'
+
+    @property
+    def is_completed(self) -> bool:
+        """Проверяет, завершено ли замечание"""
+        return self.status == 'completed'
+
+    @property
+    def is_rework(self) -> bool:
+        """Проверяет, находится ли замечание на доработке"""
+        return self.status == 'rework'
+
     def can_be_resolved_by(self, employee: Employee) -> bool:
         """Проверяет, может ли сотрудник отметить замечание как решенное"""
         if employee.position == 'admin':
             return True
         elif employee.role == 'programmer' and self.feature.created_by == employee:
+            return self.status in ['open', 'in_progress', 'rework']
+        return False
+
+    def can_be_completed_by(self, employee: Employee) -> bool:
+        """Проверяет, может ли сотрудник завершить замечание"""
+        if employee.position == 'admin':
             return True
+        elif employee.role == 'tester':
+            return self.status == 'resolved'
+        return False
+
+    def can_be_returned_to_rework_by(self, employee: Employee) -> bool:
+        """Проверяет, может ли сотрудник вернуть замечание на доработку"""
+        if employee.position == 'admin':
+            return True
+        elif employee.role == 'tester':
+            return self.status in ['resolved', 'completed']
         return False
 
     def mark_as_resolved(self, employee: Employee) -> None:
@@ -294,24 +356,21 @@ class FeatureComment(models.Model):
         if not self.can_be_resolved_by(employee):
             raise PermissionError("У сотрудника нет прав для отметки замечания как решенного")
         
+        self.status = 'resolved'
         self.is_resolved = True
         self.rework_reason = None  # Очищаем причину возврата на доработку
         self.save()
-        
-        # Проверяем, что замечание действительно сохранилось
-        from django.db import connection
-        cursor = connection.cursor()
-        cursor.execute("SELECT is_resolved FROM testing_featurecomment WHERE id = %s", [self.id])
-        result = cursor.fetchone()
-        print(f"DEBUG: Проверка в БД - is_resolved = {result[0] if result else 'None'}")
 
-    def can_be_returned_to_rework_by(self, employee: Employee) -> bool:
-        """Проверяет, может ли сотрудник вернуть замечание на доработку"""
-        if employee.position == 'admin':
-            return True
-        elif employee.role == 'tester':
-            return True
-        return False
+    def mark_as_completed(self, employee: Employee) -> None:
+        """Отмечает замечание как завершенное"""
+        if not self.can_be_completed_by(employee):
+            raise PermissionError("У сотрудника нет прав для завершения замечания")
+        
+        from django.utils import timezone
+        
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.save()
 
     def return_to_rework(self, employee: Employee, reason: str) -> None:
         """Возвращает замечание на доработку"""
@@ -321,8 +380,10 @@ class FeatureComment(models.Model):
         if not reason.strip():
             raise ValueError("Причина возврата на доработку обязательна")
         
+        self.status = 'rework'
         self.is_resolved = False
         self.rework_reason = reason.strip()
+        self.completed_at = None  # Сбрасываем дату завершения
         self.save()
 
 
@@ -332,6 +393,7 @@ class FeatureCommentHistory(models.Model):
     ACTION_CHOICES = [
         ('created', 'Создано'),
         ('resolved', 'Решено'),
+        ('completed', 'Завершено'),
         ('returned_to_rework', 'Возвращено на доработку'),
         ('updated', 'Обновлено'),
     ]

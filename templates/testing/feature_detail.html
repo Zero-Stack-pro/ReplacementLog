@@ -51,12 +51,12 @@
                         </div>
                     </div>
 
-                    <!-- Замечания -->
+                    <!-- Активные замечания -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-chat-dots"></i>
-                                Замечания
+                                Активные замечания
                             </h5>
                             {% if employee.position == 'admin' or employee.role == 'tester' %}
                             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCommentModal">
@@ -66,8 +66,8 @@
                             {% endif %}
                         </div>
                         <div class="card-body">
-                            {% if comments %}
-                            {% for comment in comments %}
+                            {% if open_comments %}
+                            {% for comment in open_comments %}
                             <div class="border-start border-4 border-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ps-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
@@ -75,15 +75,13 @@
                                         <span class="badge bg-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ms-2">
                                             {{ comment.get_comment_type_display }}
                                         </span>
-                                        {% if comment.is_resolved %}
-                                        <span class="badge bg-success ms-1">Решено</span>
-                                        {% elif comment.rework_reason %}
-                                        <span class="badge bg-warning ms-1">Возвращено на доработку</span>
-                                        {% endif %}
+                                        <span class="badge bg-{% if comment.status == 'open' %}primary{% elif comment.status == 'in_progress' %}info{% elif comment.status == 'rework' %}warning{% endif %} ms-1">
+                                            {{ comment.get_status_display }}
+                                        </span>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
-                                        {% if not comment.is_resolved and employee.role == 'programmer' and feature.created_by == employee %}
+                                        {% if comment.status in 'open,in_progress,rework' and employee.role == 'programmer' and feature.created_by == employee %}
                                         <form method="post" action="{% url 'testing:feature_resolve_comment' feature.pk comment.pk %}" class="d-inline">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-outline-success" 
@@ -93,20 +91,10 @@
                                             </button>
                                         </form>
                                         {% endif %}
-                                        {% if comment.is_resolved %}
-                                            {% if employee.role == 'tester' or employee.position == 'admin' %}
-                                        <button type="button" class="btn btn-sm btn-outline-warning" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#returnToReworkModal{{ comment.pk }}"
-                                                title="Вернуть на доработку">
-                                            <i class="bi bi-arrow-left-circle"></i>
-                                        </button>
-                                            {% endif %}
-                                        {% endif %}
                                     </div>
                                 </div>
                                 <p class="mb-0">{{ comment.comment|linebreaks }}</p>
-                                {% if comment.rework_reason and not comment.is_resolved %}
+                                {% if comment.rework_reason %}
                                 <div class="mt-2 p-2 bg-warning bg-opacity-10 border-start border-warning border-3">
                                     <small class="text-muted">
                                         <i class="bi bi-exclamation-triangle"></i>
@@ -120,22 +108,116 @@
                             {% else %}
                             <div class="text-center py-3">
                                 <i class="bi bi-chat-dots display-4 text-muted"></i>
-                                <p class="text-muted mt-2">Нет замечаний</p>
+                                <p class="text-muted mt-2">Нет активных замечаний</p>
                             </div>
                             {% endif %}
                         </div>
                     </div>
 
+                    <!-- Решенные замечания -->
+                    {% if resolved_comments %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-check-circle"></i>
+                                Решенные замечания (требуют проверки)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for comment in resolved_comments %}
+                            <div class="border-start border-4 border-success ps-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ comment.author.get_full_name }}</strong>
+                                        <span class="badge bg-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ms-2">
+                                            {{ comment.get_comment_type_display }}
+                                        </span>
+                                        <span class="badge bg-success ms-1">Решено</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                        {% if employee.role == 'tester' or employee.position == 'admin' %}
+                                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#completeModal{{ comment.pk }}"
+                                                title="Завершить замечание">
+                                            <i class="bi bi-check2-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#returnToReworkModal{{ comment.pk }}"
+                                                title="Вернуть на доработку">
+                                            <i class="bi bi-arrow-left-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="mb-0">{{ comment.comment|linebreaks }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Завершенные замечания -->
+                    {% if completed_comments %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-check2-circle"></i>
+                                Завершенные замечания
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for comment in completed_comments %}
+                            <div class="border-start border-4 border-success ps-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ comment.author.get_full_name }}</strong>
+                                        <span class="badge bg-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ms-2">
+                                            {{ comment.get_comment_type_display }}
+                                        </span>
+                                        <span class="badge bg-success ms-1">Завершено</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                        {% if comment.completed_at %}
+                                        <small class="text-muted">Завершено: {{ comment.completed_at|date:"d.m.Y H:i" }}</small>
+                                        {% endif %}
+                                        {% if employee.role == 'tester' or employee.position == 'admin' %}
+                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#returnToReworkModal{{ comment.pk }}"
+                                                title="Вернуть на доработку">
+                                            <i class="bi bi-arrow-left-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="mb-0">{{ comment.comment|linebreaks }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- История замечаний -->
                     {% if comment_history %}
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-clock-history"></i>
                                 История изменений замечаний
                             </h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleHistoryBtn" 
+                                    data-feature-id="{{ feature.pk }}" 
+                                    data-project-id="{{ feature.test_project.pk }}"
+                                    title="Скрыть/показать историю">
+                                <i class="bi bi-eye-slash" id="historyIcon"></i>
+                                <span id="historyText">Скрыть</span>
+                            </button>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" id="historyContent">
                             {% for history in comment_history %}
                             <div class="d-flex align-items-start mb-3">
                                 <div class="flex-shrink-0">
@@ -290,6 +372,9 @@ document.addEventListener('DOMContentLoaded', function() {
             input.classList.add('form-control');
         }
     });
+    
+    // Инициализация состояния истории
+    initializeHistoryToggle();
 });
 
 // Функция для отметки как выполненный
@@ -315,11 +400,149 @@ function markCompleted() {
         });
     }
 }
+
+// Функции для управления историей
+function initializeHistoryToggle() {
+    const toggleBtn = document.getElementById('toggleHistoryBtn');
+    const historyContent = document.getElementById('historyContent');
+    
+    if (!toggleBtn || !historyContent) {
+        return; // Элементы не найдены, выходим
+    }
+    
+    const projectId = toggleBtn.getAttribute('data-project-id');
+    const featureId = toggleBtn.getAttribute('data-feature-id');
+    const storageKey = `feature_history_hidden_project_${projectId}`;
+    
+    // Проверяем сохраненное состояние
+    const isHidden = localStorage.getItem(storageKey) === 'true';
+    
+    if (isHidden) {
+        hideHistory();
+    } else {
+        showHistory();
+    }
+    
+    // Добавляем обработчик клика
+    toggleBtn.addEventListener('click', function() {
+        const isCurrentlyHidden = historyContent.classList.contains('hidden') || 
+                                 historyContent.style.display === 'none';
+        
+        // Добавляем анимацию клика
+        toggleBtn.classList.add('clicked');
+        setTimeout(() => toggleBtn.classList.remove('clicked'), 300);
+        
+        if (isCurrentlyHidden) {
+            showHistory();
+        } else {
+            hideHistory();
+        }
+        
+        // Сохраняем состояние в localStorage
+        localStorage.setItem(storageKey, (!isCurrentlyHidden).toString());
+    });
+}
+
+function hideHistory() {
+    const historyContent = document.getElementById('historyContent');
+    const historyIcon = document.getElementById('historyIcon');
+    const historyText = document.getElementById('historyText');
+    const card = historyContent.closest('.card');
+    
+    if (historyContent) {
+        // Добавляем классы для анимации
+        historyContent.classList.remove('visible');
+        historyContent.classList.add('hidden');
+        
+        // Устанавливаем display: none после завершения анимации
+        setTimeout(() => {
+            historyContent.style.display = 'none';
+        }, 300);
+    }
+    
+    if (historyIcon) {
+        historyIcon.className = 'bi bi-eye';
+    }
+    
+    if (historyText) {
+        historyText.textContent = 'Показать';
+    }
+    
+    if (card) {
+        card.classList.remove('history-visible');
+        card.classList.add('history-hidden');
+    }
+}
+
+function showHistory() {
+    const historyContent = document.getElementById('historyContent');
+    const historyIcon = document.getElementById('historyIcon');
+    const historyText = document.getElementById('historyText');
+    const card = historyContent.closest('.card');
+    
+    if (historyContent) {
+        // Сначала показываем элемент
+        historyContent.style.display = 'block';
+        
+        // Затем запускаем анимацию
+        setTimeout(() => {
+            historyContent.classList.remove('hidden');
+            historyContent.classList.add('visible');
+        }, 10);
+    }
+    
+    if (historyIcon) {
+        historyIcon.className = 'bi bi-eye-slash';
+    }
+    
+    if (historyText) {
+        historyText.textContent = 'Скрыть';
+    }
+    
+    if (card) {
+        card.classList.remove('history-hidden');
+        card.classList.add('history-visible');
+    }
+}
 </script>
 
+<!-- Модальные окна для завершения замечаний -->
+{% for comment in resolved_comments %}
+    {% if employee.role == 'tester' or employee.position == 'admin' %}
+<div class="modal fade" id="completeModal{{ comment.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Завершить замечание</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'testing:feature_comment_complete' feature.pk comment.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Замечание:</label>
+                        <div class="p-2 bg-light rounded">{{ comment.comment|linebreaks }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment{{ comment.pk }}" class="form-label">Комментарий к завершению</label>
+                        <textarea class="form-control" id="comment{{ comment.pk }}" name="comment" rows="3" 
+                                  placeholder="Дополнительный комментарий к завершению замечания (необязательно)"></textarea>
+                        <div class="form-text">Дополнительный комментарий к завершению замечания</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Завершить замечание</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+    {% endif %}
+{% endfor %}
+
 <!-- Модальные окна для возврата замечаний на доработку -->
-{% for comment in comments %}
-{% if comment.is_resolved %}
+{% for comment in resolved_comments %}
     {% if employee.role == 'tester' or employee.position == 'admin' %}
 <div class="modal fade" id="returnToReworkModal{{ comment.pk }}" tabindex="-1">
     <div class="modal-dialog">
@@ -351,6 +574,39 @@ function markCompleted() {
     </div>
 </div>
     {% endif %}
-{% endif %}
+{% endfor %}
+
+{% for comment in completed_comments %}
+    {% if employee.role == 'tester' or employee.position == 'admin' %}
+<div class="modal fade" id="returnToReworkModal{{ comment.pk }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Возврат замечания на доработку</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'testing:feature_comment_return_to_rework' feature.pk comment.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Замечание:</label>
+                        <div class="p-2 bg-light rounded">{{ comment.comment|linebreaks }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason{{ comment.pk }}" class="form-label">Причина возврата на доработку *</label>
+                        <textarea class="form-control" id="reason{{ comment.pk }}" name="reason" rows="3" 
+                                  placeholder="Укажите причину возврата замечания на доработку" required></textarea>
+                        <div class="form-text">Обязательно укажите причину возврата замечания на доработку</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-warning">Вернуть на доработку</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+    {% endif %}
 {% endfor %}
 {% endblock %}

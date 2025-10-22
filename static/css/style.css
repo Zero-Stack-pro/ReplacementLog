@@ -2276,4 +2276,519 @@ hr {
         display: block;
         margin-top: 0.25rem;
     }
+}
+
+/* ===== ИНДИВИДУАЛЬНЫЕ СТИЛИ ДЛЯ ФОРМЫ ФИЛЬТРОВ FEATURES ===== */
+.features-filter-form {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+.features-filter-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #6366f1;
+    opacity: 0.8;
+}
+
+.features-filter-form:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+/* Заголовок формы */
+.features-filter-form .form-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.features-filter-form .form-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 2px;
+}
+
+/* Лейблы */
+.features-filter-form .form-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    padding-left: 0.5rem;
+}
+
+.features-filter-form .form-label::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 2px;
+}
+
+/* Поля ввода */
+.features-filter-form .form-control,
+.features-filter-form .form-select {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    box-shadow: none;
+    min-height: 48px;
+}
+
+.features-filter-form .form-control:focus,
+.features-filter-form .form-select:focus {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    transform: translateY(-1px);
+}
+
+.features-filter-form .form-control:hover,
+.features-filter-form .form-select:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Плейсхолдер */
+.features-filter-form .form-control::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 400;
+}
+
+/* Кнопки */
+.features-filter-form .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.features-filter-form .btn {
+    border-radius: 1rem;
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-height: 48px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.features-filter-form .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.features-filter-form .btn:hover::before {
+    left: 100%;
+}
+
+.features-filter-form .btn-outline-primary {
+    background: transparent;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+.features-filter-form .btn-outline-primary:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.features-filter-form .btn-outline-secondary {
+    background: transparent;
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+
+.features-filter-form .btn-outline-secondary:hover {
+    background: var(--text-secondary);
+    border-color: var(--text-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Иконки в кнопках */
+.features-filter-form .btn i {
+    font-size: 1.1em;
+    margin-right: 0.4em;
+    transition: transform 0.3s ease;
+}
+
+.features-filter-form .btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Анимация появления формы */
+.features-filter-form {
+    animation: slideInDown 0.6s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Анимация для полей при фокусе */
+.features-filter-form .form-control:focus,
+.features-filter-form .form-select:focus {
+    animation: focusPulse 0.3s ease-out;
+}
+
+@keyframes focusPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .features-filter-form {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .features-filter-form .form-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .features-filter-form .form-control,
+    .features-filter-form .form-select {
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+    
+    .features-filter-form .btn {
+        min-height: 44px;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .features-filter-form .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .features-filter-form .btn-group .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .features-filter-form .btn-group .btn:last-child {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .features-filter-form {
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+    
+    .features-filter-form .form-title {
+        font-size: 1rem;
+    }
+    
+    .features-filter-form .form-label {
+        font-size: 0.85rem;
+    }
+    
+    .features-filter-form .form-control,
+    .features-filter-form .form-select {
+        font-size: 0.85rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* Темная тема для формы фильтров */
+[data-theme="dark"] .features-filter-form {
+    background: var(--bg-main);
+    border-color: var(--border-light);
+}
+
+[data-theme="dark"] .features-filter-form .form-control,
+[data-theme="dark"] .features-filter-form .form-select {
+    background: var(--bg-main);
+    border-color: var(--border-light);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .features-filter-form .form-control:focus,
+[data-theme="dark"] .features-filter-form .form-select:focus {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .features-filter-form .btn-outline-primary {
+    background: transparent;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .features-filter-form .btn-outline-secondary {
+    background: transparent;
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+/* ===== КЛИКАБЕЛЬНЫЕ СТРОКИ ФИЧ ===== */
+.feature-table tbody tr.feature-row {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.feature-table tbody tr.feature-row:hover {
+    background-color: rgba(99, 102, 241, 0.05) !important;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+    z-index: 1;
+}
+
+.feature-table tbody tr.feature-row:hover td {
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.feature-table tbody tr.feature-row:hover .title-cell a {
+    color: var(--primary-color) !important;
+}
+
+.feature-table tbody tr.feature-row:hover .badge {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.feature-table tbody tr.feature-row:active {
+    transform: scale(0.99);
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Темная тема для кликабельных строк */
+[data-theme="dark"] .feature-table tbody tr.feature-row:hover {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .feature-table tbody tr.feature-row:hover td {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .feature-table tbody tr.feature-row:active {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+/* ===== СТИЛИ ДЛЯ СКРЫТИЯ/ПОКАЗА ИСТОРИИ ЗАМЕЧАНИЙ ===== */
+#historyContent {
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+#historyContent.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transform: translateY(-10px);
+}
+
+#historyContent.visible {
+    max-height: 1000px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Кнопка переключения истории */
+#toggleHistoryBtn {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#toggleHistoryBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#toggleHistoryBtn:active {
+    transform: translateY(0);
+}
+
+#toggleHistoryBtn i {
+    transition: transform 0.3s ease;
+}
+
+#toggleHistoryBtn:hover i {
+    transform: scale(1.1);
+}
+
+/* Анимация для иконки глаза */
+@keyframes eyeBlink {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.8); }
+}
+
+#toggleHistoryBtn.clicked i {
+    animation: eyeBlink 0.3s ease;
+}
+
+/* Плавное появление/исчезновение элементов истории */
+#historyContent .d-flex {
+    transition: all 0.3s ease;
+}
+
+#historyContent.hidden .d-flex {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+#historyContent.visible .d-flex {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Задержка для каждого элемента истории */
+#historyContent.visible .d-flex:nth-child(1) { transition-delay: 0.1s; }
+#historyContent.visible .d-flex:nth-child(2) { transition-delay: 0.2s; }
+#historyContent.visible .d-flex:nth-child(3) { transition-delay: 0.3s; }
+#historyContent.visible .d-flex:nth-child(4) { transition-delay: 0.4s; }
+#historyContent.visible .d-flex:nth-child(5) { transition-delay: 0.5s; }
+#historyContent.visible .d-flex:nth-child(n+6) { transition-delay: 0.6s; }
+
+/* Стили для состояния "скрыто" */
+.history-hidden #historyContent {
+    display: none !important;
+}
+
+.history-hidden #toggleHistoryBtn {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.history-hidden #toggleHistoryBtn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* Стили для состояния "показано" */
+.history-visible #historyContent {
+    display: block !important;
+}
+
+.history-visible #toggleHistoryBtn {
+    background: rgba(108, 117, 125, 0.1);
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+.history-visible #toggleHistoryBtn:hover {
+    background: rgba(108, 117, 125, 0.2);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    #toggleHistoryBtn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    #toggleHistoryBtn span {
+        display: none;
+    }
+    
+    #toggleHistoryBtn i {
+        font-size: 1rem;
+    }
+}
+
+/* Темная тема */
+[data-theme="dark"] #toggleHistoryBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #toggleHistoryBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .history-hidden #toggleHistoryBtn {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .history-visible #toggleHistoryBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-primary);
 } 

@@ -316,9 +316,9 @@ class FeatureService:
         feature.refresh_from_db()
         
         # Если все замечания решены, меняем статус на testing для повторной проверки
-        unresolved_comments = feature.comments.filter(is_resolved=False)
+        unresolved_comments = feature.comments.filter(status__in=['open', 'in_progress', 'rework'])
         total_comments = feature.comments.count()
-        resolved_comments = feature.comments.filter(is_resolved=True).count()
+        resolved_comments = feature.comments.filter(status='resolved').count()
         
         logger.info(f"Функционал {feature.id}: всего замечаний = {total_comments}, решенных = {resolved_comments}, нерешенных = {unresolved_comments.count()}")
         
@@ -367,14 +367,20 @@ class FeatureService:
         if not (employee.role == 'tester' or employee.position == 'admin'):
             raise PermissionError("Только тестировщики и администраторы могут возвращать замечания на доработку")
         
-        if not comment.is_resolved:
-            raise ValueError("Можно возвращать на доработку только решенные замечания")
+        if comment.status not in ['resolved', 'completed']:
+            raise ValueError("Можно возвращать на доработку только решенные или завершенные замечания")
         
         with transaction.atomic():
             # Возвращаем замечание на доработку
-            comment.is_resolved = False
-            comment.rework_reason = reason
-            comment.save()
+            comment.return_to_rework(employee, reason)
+            
+            # Добавляем запись в историю замечания
+            FeatureCommentHistory.objects.create(
+                comment=comment,
+                action='returned_to_rework',
+                changed_by=employee,
+                reason=reason
+            )
             
             # Логируем действие
             log_activity(
@@ -399,6 +405,59 @@ class FeatureService:
             NotificationService.notify_comment_returned_to_rework(feature, comment, employee, reason)
             
             logger.info(f"Замечание {comment.id} возвращено на доработку сотрудником {employee.user.username}")
+            return comment
+
+    @staticmethod
+    def complete_comment(
+        feature: Feature,
+        comment: FeatureComment,
+        employee: Employee,
+        completion_comment: str = ""
+    ) -> FeatureComment:
+        """
+        Завершает замечание (только для тестировщиков и администраторов)
+        
+        Args:
+            feature: Функционал
+            comment: Замечание для завершения
+            employee: Тестировщик/администратор
+            completion_comment: Комментарий к завершению
+            
+        Returns:
+            FeatureComment: Обновленное замечание
+        """
+        if not (employee.role == 'tester' or employee.position == 'admin'):
+            raise PermissionError("Только тестировщики и администраторы могут завершать замечания")
+        
+        if comment.status != 'resolved':
+            raise ValueError("Можно завершать только решенные замечания")
+        
+        with transaction.atomic():
+            # Завершаем замечание
+            comment.mark_as_completed(employee)
+            
+            # Добавляем запись в историю замечания
+            FeatureCommentHistory.objects.create(
+                comment=comment,
+                action='completed',
+                changed_by=employee,
+                reason=completion_comment or "Замечание завершено тестировщиком"
+            )
+            
+            # Логируем действие
+            log_activity(
+                employee.user,
+                'comment_completed',
+                'FeatureComment',
+                comment.id,
+                str(comment),
+                description=f"Замечание завершено: {comment.comment[:50]}..."
+            )
+            
+            # Отправляем уведомление
+            NotificationService.notify_comment_completed(feature, comment, employee)
+            
+            logger.info(f"Замечание {comment.id} завершено сотрудником {employee.user.username}")
             return comment
 
     @staticmethod
@@ -664,6 +723,31 @@ class NotificationService:
                     notification_type='feature_comment_resolved',
                     title=f'Замечание решено: {feature.title}',
                     message=f'Замечание к функционалу "{feature.title}" решено программистом {resolved_by.get_full_name()}. '
+                           f'Текст замечания: {comment.comment[:200]}{"..." if len(comment.comment) > 200 else ""}'
+                )
+
+    @staticmethod
+    def notify_comment_completed(feature: Feature, comment: FeatureComment, completed_by: Employee) -> None:
+        """Отправляет уведомления о завершении замечания"""
+        # Уведомляем создателя функционала (программиста) - если это не тот же человек
+        if feature.created_by != completed_by:
+            send_notification(
+                recipient=feature.created_by,
+                notification_type='feature_comment_completed',
+                title=f'Замечание завершено: {feature.title}',
+                message=f'Замечание к функционалу "{feature.title}" завершено тестировщиком {completed_by.get_full_name()}. '
+                       f'Текст замечания: {comment.comment[:200]}{"..." if len(comment.comment) > 200 else ""}'
+            )
+        
+        # Уведомляем администраторов
+        admins = Employee.objects.filter(position='admin', is_active=True)
+        for admin in admins:
+            if admin != completed_by:
+                send_notification(
+                    recipient=admin,
+                    notification_type='feature_comment_completed',
+                    title=f'Замечание завершено: {feature.title}',
+                    message=f'Замечание к функционалу "{feature.title}" завершено тестировщиком {completed_by.get_full_name()}. '
                            f'Текст замечания: {comment.comment[:200]}{"..." if len(comment.comment) > 200 else ""}'
                 )
 

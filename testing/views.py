@@ -4,25 +4,19 @@
 Использует Class-Based Views согласно Django Best Practices.
 """
 
-import json
-from typing import Any, Dict
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
+from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
-                                  UpdateView, View)
+from django.views.generic import (CreateView, DetailView, ListView, UpdateView,
+                                  View)
 
-from shift_log.models import Employee
-
-from .forms import (FeatureCommentForm, FeatureCommentReworkForm,
-                    FeatureFilterForm, FeatureForm, TestProjectFilterForm,
+from .forms import (FeatureCommentCompleteForm, FeatureCommentForm,
+                    FeatureCommentReworkForm, FeatureFilterForm, FeatureForm,
+                    FeatureStatusUpdateForm, TestProjectFilterForm,
                     TestProjectForm)
 from .models import Feature, FeatureComment, TestProject
 from .services.feature_service import FeatureService, TestProjectService
@@ -230,12 +224,11 @@ class TestProjectUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView)
 
 
 class FeatureListView(LoginRequiredMixin, ListView):
-    """Список функционала для тестирования"""
+    """Список функционала для тестирования с группировкой по проектам"""
     
     model = Feature
     template_name = 'testing/feature_list.html'
-    context_object_name = 'features'
-    paginate_by = 20
+    context_object_name = 'features_by_project'
 
     def get_queryset(self):
         """Возвращает queryset функционала с учетом прав доступа"""
@@ -278,7 +271,7 @@ class FeatureListView(LoginRequiredMixin, ListView):
                     Q(description__icontains=search_term)
                 )
         
-        return queryset.order_by('-priority', '-created_at')
+        return queryset.order_by('test_project__name', '-priority', '-created_at')
 
     def get_context_data(self, **kwargs):
         """Добавляет дополнительные данные в контекст"""
@@ -289,11 +282,23 @@ class FeatureListView(LoginRequiredMixin, ListView):
             employee = self.request.user.employee
             context['employee'] = employee
             context['can_create_feature'] = FeatureService.can_create_feature(employee)
+        
+        # Группируем фичи по проектам
+        features = self.get_queryset()
+        features_by_project = {}
+        
+        for feature in features:
+            project = feature.test_project
+            if project not in features_by_project:
+                features_by_project[project] = []
             
-            # Добавляем информацию о правах редактирования для каждого функционала
-            features = context.get('features', [])
-            for feature in features:
-                feature.can_be_edited_by = feature.can_be_edited_by(employee)
+            # Добавляем информацию о правах редактирования
+            if hasattr(self.request.user, 'employee'):
+                feature.can_be_edited_by = feature.can_be_edited_by(self.request.user.employee)
+            
+            features_by_project[project].append(feature)
+        
+        context['features_by_project'] = features_by_project
         
         return context
 
@@ -369,12 +374,17 @@ class FeatureDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         feature = self.get_object()
         
-        # Получаем замечания
-        comments = feature.comments.select_related('author', 'author__user').order_by('-created_at')
+        # Получаем замечания сгруппированные по статусу
+        all_comments = feature.comments.select_related('author', 'author__user').order_by('-created_at')
+        
+        # Группируем замечания по статусу
+        open_comments = all_comments.filter(status__in=['open', 'in_progress', 'rework'])
+        resolved_comments = all_comments.filter(status='resolved')
+        completed_comments = all_comments.filter(status='completed')
         
         # Получаем историю замечаний
         comment_history = []
-        for comment in comments:
+        for comment in all_comments:
             history = comment.history.select_related('changed_by', 'changed_by__user').order_by('-changed_at')
             comment_history.extend(history)
         
@@ -392,7 +402,9 @@ class FeatureDetailView(LoginRequiredMixin, DetailView):
         can_edit = feature.can_be_edited_by(employee) if employee else False
         
         context.update({
-            'comments': comments,
+            'open_comments': open_comments,
+            'resolved_comments': resolved_comments,
+            'completed_comments': completed_comments,
             'comment_history': comment_history,
             'attachments': attachments,
             'comment_form': comment_form,
@@ -602,28 +614,16 @@ class FeatureResolveCommentView(LoginRequiredMixin, View):
         employee = request.user.employee
         
         try:
-            print(f"DEBUG: Начинаем процесс решения замечания {comment.id} для функционала {feature.id}")
-            print(f"DEBUG: Текущий статус функционала: {feature.status}")
-            print(f"DEBUG: Статус замечания до решения: {comment.is_resolved}")
+            comment.mark_as_resolved(employee)
             
-            FeatureService.resolve_comment_and_request_review(
-                feature=feature,
+            # Создаем запись в истории
+            from .models import FeatureCommentHistory
+            FeatureCommentHistory.objects.create(
                 comment=comment,
-                employee=employee
+                action='resolved',
+                changed_by=employee,
+                reason='Замечание отмечено как решенное программистом'
             )
-            
-            # Обновляем объекты из базы данных
-            feature.refresh_from_db()
-            comment.refresh_from_db()
-            
-            print(f"DEBUG: Статус функционала после решения: {feature.status}")
-            print(f"DEBUG: Статус замечания после решения: {comment.is_resolved}")
-            
-            # Проверяем все замечания функционала
-            all_comments = feature.comments.all()
-            print(f"DEBUG: Все замечания функционала {feature.id}:")
-            for c in all_comments:
-                print(f"  - Замечание {c.id}: is_resolved = {c.is_resolved}")
             
             messages.success(request, 'Замечание отмечено как решенное. Требуется повторная проверка.')
         except PermissionError as e:
@@ -657,6 +657,7 @@ class FeatureCommentReturnToReworkView(LoginRequiredMixin, View):
                     employee=employee,
                     reason=form.cleaned_data['reason']
                 )
+                
                 messages.success(request, 'Замечание возвращено на доработку')
             except PermissionError as e:
                 messages.error(request, str(e))
@@ -664,6 +665,46 @@ class FeatureCommentReturnToReworkView(LoginRequiredMixin, View):
                 messages.error(request, str(e))
             except Exception as e:
                 messages.error(request, f'Ошибка при возврате замечания на доработку: {str(e)}')
+        else:
+            # Показываем ошибки валидации
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label}: {error}')
+        
+        return redirect('testing:feature_detail', pk=pk)
+
+
+class FeatureCommentCompleteView(LoginRequiredMixin, View):
+    """Завершение замечания тестировщиком или администратором"""
+    
+    def post(self, request, pk, comment_id):
+        """Обрабатывает POST-запрос для завершения замечания"""
+        feature = get_object_or_404(Feature, pk=pk)
+        comment = get_object_or_404(FeatureComment, pk=comment_id, feature=feature)
+        
+        if not hasattr(request.user, 'employee'):
+            messages.error(request, 'Профиль сотрудника не найден')
+            return redirect('testing:feature_detail', pk=pk)
+        
+        employee = request.user.employee
+        
+        form = FeatureCommentCompleteForm(request.POST)
+        if form.is_valid():
+            try:
+                FeatureService.complete_comment(
+                    feature=feature,
+                    comment=comment,
+                    employee=employee,
+                    completion_comment=form.cleaned_data.get('comment', '')
+                )
+                
+                messages.success(request, 'Замечание успешно завершено')
+            except PermissionError as e:
+                messages.error(request, str(e))
+            except ValueError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f'Ошибка при завершении замечания: {str(e)}')
         else:
             # Показываем ошибки валидации
             for field, errors in form.errors.items():

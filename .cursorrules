@@ -1,0 +1,732 @@
+# Корпоративные правила стиля кодирования для Django проектов
+
+## Общие принципы архитектуры
+
+### 1. Django Best Practices и 12-Factor
+- Строгое следование Django Best Practices
+- Применение принципов 12-Factor App
+- Использование DDD-подхода (Domain-Driven Design)
+- Следование принципу "slim views, fat services"
+
+### 2. Структура проекта
+```
+project_root/
+├── apps/                    # Переиспользуемые Django приложения
+│   ├── app_name/
+│   │   ├── domain/          # Доменная логика (commands/queries/selectors)
+│   │   ├── services/        # Бизнес-логика и сервисы
+│   │   ├── models.py        # Модели данных
+│   │   ├── views.py         # Тонкие представления
+│   │   ├── forms.py         # Формы и сериализаторы
+│   │   ├── admin.py         # Админ-панель
+│   │   ├── urls.py          # URL-маршруты
+│   │   └── tests/           # Тесты
+├── config/                  # Конфигурация проекта
+│   ├── settings/            # Настройки по окружениям
+│   │   ├── base.py
+│   │   ├── dev.py
+│   │   ├── test.py
+│   │   └── prod.py
+│   ├── urls.py
+│   └── wsgi.py
+├── static/                  # Статические файлы
+├── templates/               # Шаблоны
+├── media/                   # Медиа файлы
+├── requirements/            # Зависимости по окружениям
+├── tests/                   # Интеграционные тесты
+├── docs/                    # Документация
+└── scripts/                 # Скрипты развертывания
+```
+
+## Правила кодирования
+
+### 3. Типизация и качество кода
+- **Обязательно**: Использование type hints для всех функций и методов
+- **Обязательно**: Docstrings для всех public методов и классов
+- **Обязательно**: Строгая типизация с mypy + django-stubs
+- **Обязательно**: Покрытие тестами критичной бизнес-логики ≥90%
+
+### 4. Импорты и модульность
+```python
+# ✅ Правильно - абсолютные импорты
+from django.contrib.auth.models import User
+from django.db import models
+from apps.shift_log.models import Employee
+from apps.shift_log.services import TaskService
+
+# ❌ Запрещено - относительные импорты
+from .models import Employee
+from ..services import TaskService
+
+# ❌ Запрещено - пакетные импорты
+from django.contrib.auth import *
+```
+
+### 5. Модели Django
+```python
+class Employee(models.Model):
+    """Модель сотрудника с полной типизацией и документацией"""
+    
+    POSITION_CHOICES = [
+        ('employee', 'Сотрудник'),
+        ('supervisor', 'Руководитель'),
+        ('admin', 'Администратор'),
+    ]
+    
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        verbose_name="Пользователь"
+    )
+    department = models.ForeignKey(
+        Department, 
+        on_delete=models.CASCADE, 
+        verbose_name="Отдел"
+    )
+    position = models.CharField(
+        max_length=20, 
+        choices=POSITION_CHOICES, 
+        default='employee', 
+        verbose_name="Должность"
+    )
+    is_active = models.BooleanField(
+        default=True, 
+        verbose_name="Активен"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name="Дата создания"
+    )
+    
+    class Meta:
+        verbose_name = "Сотрудник"
+        verbose_name_plural = "Сотрудники"
+        ordering = ['user__last_name', 'user__first_name']
+    
+    def __str__(self) -> str:
+        return f"{self.user.get_full_name()} - {self.department.name}"
+    
+    def get_full_name(self) -> str:
+        """Возвращает полное имя сотрудника"""
+        full_name = self.user.get_full_name()
+        return full_name if full_name else self.user.username
+    
+    @property
+    def is_supervisor(self) -> bool:
+        """Проверяет, является ли сотрудник руководителем"""
+        return self.position in ['supervisor', 'admin']
+```
+
+### 6. Сервисный слой
+```python
+from typing import List, Optional
+from django.db import transaction
+from django.contrib.auth.models import User
+
+from apps.shift_log.models import Employee, Task
+from apps.shift_log.utils import log_activity, send_notification
+
+class TaskService:
+    """Сервис для управления задачами"""
+    
+    @staticmethod
+    def create_task(
+        title: str,
+        description: str,
+        department_id: int,
+        assigned_to_id: Optional[int],
+        created_by: Employee,
+        priority: int = 2
+    ) -> Task:
+        """
+        Создает новую задачу
+        
+        Args:
+            title: Название задачи
+            description: Описание задачи
+            department_id: ID отдела
+            assigned_to_id: ID назначенного сотрудника
+            created_by: Создатель задачи
+            priority: Приоритет (1-4)
+            
+        Returns:
+            Task: Созданная задача
+            
+        Raises:
+            ValueError: Если данные некорректны
+        """
+        if not TaskService.can_create_task(created_by, department_id):
+            raise ValueError("Недостаточно прав для создания задачи")
+        
+        with transaction.atomic():
+            task = Task.objects.create(
+                title=title,
+                description=description,
+                department_id=department_id,
+                assigned_to_id=assigned_to_id,
+                created_by=created_by,
+                priority=priority
+            )
+            
+            # Логируем создание
+            log_activity(
+                user=created_by.user,
+                action='created',
+                model_name='Task',
+                object_id=task.id,
+                object_repr=str(task),
+                description=f"Создана задача '{title}'"
+            )
+            
+            # Отправляем уведомления
+            if assigned_to_id:
+                send_notification(
+                    recipient_id=assigned_to_id,
+                    notification_type='task_assigned',
+                    title=f'Новое задание: {title}',
+                    message=f'Вам назначено задание "{title}"'
+                )
+            
+            return task
+    
+    @staticmethod
+    def can_create_task(employee: Employee, department_id: int) -> bool:
+        """Проверяет, может ли сотрудник создавать задачи"""
+        if employee.is_admin:
+            return True
+        elif employee.is_supervisor:
+            return employee.department_id == department_id
+        else:
+            return employee.department_id == department_id
+```
+
+### 7. Представления (Views)
+```python
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, CreateView, UpdateView
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.contrib import messages
+
+from apps.shift_log.models import Task
+from apps.shift_log.services import TaskService
+from apps.shift_log.forms import TaskForm
+
+class TaskListView(LoginRequiredMixin, ListView):
+    """Список задач - тонкое представление"""
+    model = Task
+    template_name = 'shift_log/task_list.html'
+    context_object_name = 'tasks'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        """Возвращает отфильтрованный queryset"""
+        queryset = Task.objects.select_related(
+            'department', 'assigned_to', 'created_by'
+        )
+        
+        # Фильтрация по отделу для не-админов
+        if not self.request.user.employee.is_admin:
+            queryset = queryset.filter(
+                department=self.request.user.employee.department
+            )
+        
+        return queryset.order_by('-created_at')
+
+class TaskCreateView(LoginRequiredMixin, CreateView):
+    """Создание задачи - тонкое представление"""
+    model = Task
+    form_class = TaskForm
+    template_name = 'shift_log/task_form.html'
+    
+    def form_valid(self, form):
+        """Обрабатывает валидную форму через сервис"""
+        try:
+            task = TaskService.create_task(
+                title=form.cleaned_data['title'],
+                description=form.cleaned_data['description'],
+                department_id=form.cleaned_data['department'].id,
+                assigned_to_id=form.cleaned_data.get('assigned_to').id if form.cleaned_data.get('assigned_to') else None,
+                created_by=self.request.user.employee,
+                priority=form.cleaned_data['priority']
+            )
+            messages.success(self.request, f'Задача "{task.title}" создана')
+            return redirect('shift_log:task_detail', pk=task.pk)
+        except ValueError as e:
+            messages.error(self.request, str(e))
+            return self.form_invalid(form)
+```
+
+### 8. Формы и сериализаторы
+```python
+from django import forms
+from django.core.exceptions import ValidationError
+
+from apps.shift_log.models import Department, Employee, Task
+
+class TaskForm(forms.ModelForm):
+    """Форма для создания/редактирования задач"""
+    
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'department', 'assigned_to', 'priority', 'due_date']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'department': forms.Select(attrs={'class': 'form-control'}),
+            'assigned_to': forms.Select(attrs={'class': 'form-control'}),
+            'priority': forms.Select(attrs={'class': 'form-control'}),
+            'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.user and not self.user.employee.is_admin:
+            # Ограничиваем выбор отдела для не-админов
+            self.fields['department'].queryset = Department.objects.filter(
+                id=self.user.employee.department.id
+            )
+    
+    def clean(self):
+        """Валидация формы"""
+        cleaned_data = super().clean()
+        
+        # Проверяем права на создание задач
+        if self.user and not TaskService.can_create_task(
+            self.user.employee, 
+            cleaned_data.get('department').id
+        ):
+            raise ValidationError("Недостаточно прав для создания задачи в этом отделе")
+        
+        return cleaned_data
+```
+
+### 9. Настройки проекта
+```python
+# config/settings/base.py
+import os
+from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
+
+def get_env_variable(var_name: str, default: str = None) -> str:
+    """Получает переменную окружения или возвращает значение по умолчанию"""
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        if default is not None:
+            return default
+        error_msg = f"Set the {var_name} environment variable"
+        raise ImproperlyConfigured(error_msg)
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Базовые настройки
+SECRET_KEY = get_env_variable('SECRET_KEY')
+DEBUG = get_env_variable('DEBUG', 'False').lower() == 'true'
+ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS', 'localhost').split(',')
+
+# База данных
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': get_env_variable('DB_NAME'),
+        'USER': get_env_variable('DB_USER'),
+        'PASSWORD': get_env_variable('DB_PASSWORD'),
+        'HOST': get_env_variable('DB_HOST', 'localhost'),
+        'PORT': get_env_variable('DB_PORT', '5432'),
+    }
+}
+
+# Интернационализация
+LANGUAGE_CODE = 'ru-ru'
+TIME_ZONE = 'Europe/Madrid'  # Переопределяется переменной TIME_ZONE
+USE_I18N = True
+USE_TZ = True
+
+# Статические файлы
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Медиа файлы
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+```
+
+### 10. Тестирование
+```python
+# tests/test_services.py
+import pytest
+from django.test import TestCase
+from django.contrib.auth.models import User
+from unittest.mock import patch
+
+from apps.shift_log.models import Employee, Department, Task
+from apps.shift_log.services import TaskService
+
+class TaskServiceTest(TestCase):
+    """Тесты для сервиса задач"""
+    
+    def setUp(self):
+        """Настройка тестовых данных"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.department = Department.objects.create(
+            name='Тестовый отдел',
+            description='Описание отдела'
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            department=self.department,
+            position='employee'
+        )
+    
+    def test_create_task_success(self):
+        """Тест успешного создания задачи"""
+        task = TaskService.create_task(
+            title='Тестовая задача',
+            description='Описание задачи',
+            department_id=self.department.id,
+            assigned_to_id=None,
+            created_by=self.employee,
+            priority=2
+        )
+        
+        self.assertEqual(task.title, 'Тестовая задача')
+        self.assertEqual(task.created_by, self.employee)
+        self.assertEqual(task.department, self.department)
+    
+    def test_create_task_insufficient_permissions(self):
+        """Тест создания задачи с недостаточными правами"""
+        other_department = Department.objects.create(
+            name='Другой отдел',
+            description='Описание'
+        )
+        
+        with self.assertRaises(ValueError):
+            TaskService.create_task(
+                title='Тестовая задача',
+                description='Описание задачи',
+                department_id=other_department.id,
+                assigned_to_id=None,
+                created_by=self.employee,
+                priority=2
+            )
+    
+    @patch('apps.shift_log.services.send_notification')
+    def test_create_task_with_notification(self, mock_send_notification):
+        """Тест создания задачи с уведомлением"""
+        assigned_employee = Employee.objects.create(
+            user=User.objects.create_user('assigned', 'assigned@example.com'),
+            department=self.department,
+            position='employee'
+        )
+        
+        task = TaskService.create_task(
+            title='Тестовая задача',
+            description='Описание задачи',
+            department_id=self.department.id,
+            assigned_to_id=assigned_employee.id,
+            created_by=self.employee,
+            priority=2
+        )
+        
+        mock_send_notification.assert_called_once()
+```
+
+### 11. Утилиты и вспомогательные функции
+```python
+# apps/shift_log/utils.py
+from typing import Optional
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+from .models import Employee, Notification, ActivityLog
+
+def log_activity(
+    user: User,
+    action: str,
+    model_name: str,
+    object_id: int,
+    object_repr: str,
+    description: str = "",
+    changes: Optional[dict] = None
+) -> ActivityLog:
+    """
+    Логирует активность пользователя
+    
+    Args:
+        user: Пользователь, выполнивший действие
+        action: Тип действия
+        model_name: Название модели
+        object_id: ID объекта
+        object_repr: Строковое представление объекта
+        description: Описание действия
+        changes: Словарь изменений
+        
+    Returns:
+        ActivityLog: Созданная запись активности
+    """
+    return ActivityLog.objects.create(
+        user=user,
+        action=action,
+        model_name=model_name,
+        object_id=object_id,
+        object_repr=object_repr,
+        description=description,
+        changes=changes,
+        timestamp=timezone.now()
+    )
+
+def send_notification(
+    recipient: Employee,
+    notification_type: str,
+    title: str,
+    message: str
+) -> Notification:
+    """
+    Отправляет уведомление сотруднику
+    
+    Args:
+        recipient: Получатель уведомления
+        notification_type: Тип уведомления
+        title: Заголовок уведомления
+        message: Текст уведомления
+        
+    Returns:
+        Notification: Созданное уведомление
+    """
+    return Notification.objects.create(
+        recipient=recipient,
+        notification_type=notification_type,
+        title=title,
+        message=message,
+        sent_at=timezone.now()
+    )
+```
+
+## Инструменты разработки
+
+### 12. Линтинг и форматирование
+```bash
+# pyproject.toml
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
+ignore = ["S101", "PLR0913", "PLR0912", "PLR0915"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "django.*",
+    "rest_framework.*",
+    "crispy_forms.*",
+    "channels.*",
+]
+ignore_missing_imports = true
+```
+
+### 13. Pre-commit хуки
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        language_version: python3.9
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.270
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.3.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [django-stubs, types-requests]
+```
+
+### 14. Makefile для автоматизации
+```makefile
+# Makefile
+.PHONY: help install test lint format migrate run
+
+help: ## Показать справку
+	@echo "Доступные команды:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+install: ## Установить зависимости
+	pip install -r requirements/dev.txt
+	pre-commit install
+
+test: ## Запустить тесты
+	python manage.py test
+	pytest tests/ -v --cov=apps --cov-report=html
+
+lint: ## Проверить код линтерами
+	ruff check apps/ tests/
+	mypy apps/ tests/
+
+format: ## Форматировать код
+	black apps/ tests/
+	isort apps/ tests/
+	ruff check --fix apps/ tests/
+
+migrate: ## Применить миграции
+	python manage.py makemigrations
+	python manage.py migrate
+
+run: ## Запустить сервер разработки
+	python manage.py runserver
+
+clean: ## Очистить временные файлы
+	find . -type f -name "*.pyc" -delete
+	find . -type d -name "__pycache__" -delete
+	rm -rf .coverage htmlcov/ .pytest_cache/
+```
+
+## Соглашения по именованию
+
+### 15. Именование файлов и директорий
+- **Файлы Python**: `snake_case.py`
+- **Модели**: `PascalCase` (например, `UserProfile`)
+- **Функции и методы**: `snake_case`
+- **Константы**: `UPPER_SNAKE_CASE`
+- **Классы**: `PascalCase`
+- **Переменные**: `snake_case`
+
+### 16. Именование в Django
+- **Модели**: `PascalCase` (например, `DailyReport`)
+- **Поля моделей**: `snake_case`
+- **URL-паттерны**: `kebab-case` (например, `daily-reports/`)
+- **Шаблоны**: `snake_case.html`
+- **Статические файлы**: `kebab-case.css`, `kebab-case.js`
+
+## Безопасность и производительность
+
+### 17. Безопасность
+- Все секреты только через переменные окружения
+- Использование `django-environ` для управления настройками
+- Валидация всех пользовательских данных
+- Использование `get_object_or_404` вместо прямого обращения к БД
+- CSRF защита для всех форм
+
+### 18. Производительность
+- Использование `select_related()` и `prefetch_related()`
+- Кэширование часто используемых данных
+- Пагинация для больших списков
+- Оптимизация запросов к БД
+
+## Документация
+
+### 19. Docstrings
+```python
+def complex_function(param1: str, param2: int, optional_param: bool = False) -> Dict[str, Any]:
+    """
+    Краткое описание функции в одной строке.
+    
+    Более подробное описание функции, если необходимо.
+    Объясняет что делает функция и зачем.
+    
+    Args:
+        param1: Описание первого параметра
+        param2: Описание второго параметра
+        optional_param: Описание опционального параметра. Defaults to False.
+        
+    Returns:
+        Словарь с результатами обработки, содержащий:
+            - 'status': Статус операции (str)
+            - 'data': Обработанные данные (Any)
+            - 'errors': Список ошибок (List[str])
+            
+    Raises:
+        ValueError: Если param1 пустой или param2 отрицательный
+        PermissionError: Если у пользователя нет прав на выполнение операции
+        
+    Example:
+        >>> result = complex_function("test", 42, True)
+        >>> print(result['status'])
+        'success'
+    """
+```
+
+### 20. Комментарии в коде
+```python
+# ✅ Хорошие комментарии
+# Проверяем права доступа перед выполнением операции
+if not user.has_perm('app.change_model'):
+    raise PermissionError("Недостаточно прав")
+
+# ❌ Плохие комментарии
+# Увеличиваем счетчик
+counter += 1
+
+# ✅ Объяснение сложной бизнес-логики
+# Согласно бизнес-правилам, задача может быть назначена только
+# сотрудникам того же отдела или администраторам
+if not (employee.department == task.department or employee.is_admin):
+    raise ValueError("Недостаточно прав для назначения задачи")
+```
+
+## Заключение
+
+Эти правила обеспечивают:
+- **Консистентность** кода во всех проектах
+- **Читаемость** и понятность кода
+- **Масштабируемость** архитектуры
+- **Надежность** и безопасность
+- **Производительность** приложения
+- **Легкость сопровождения** и развития
+
+Следование этим правилам обязательно для всех разработчиков команды.
+
+

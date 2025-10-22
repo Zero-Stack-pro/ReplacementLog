@@ -1,0 +1,1055 @@
+# Корпоративные правила визуального дизайна для веб-приложений
+
+## Общие принципы дизайна
+
+### 1. Цветовая палитра
+```css
+/* Основная цветовая схема */
+:root {
+    /* Primary Colors - Основные цвета */
+    --primary-color: #6366f1;
+    --primary-rgb: 99, 102, 241;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    
+    /* Secondary Colors - Дополнительные цвета */
+    --secondary-color: #ec4899;
+    --secondary-rgb: 236, 72, 153;
+    --secondary-gradient: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+    
+    /* Status Colors - Цвета статусов */
+    --success-color: #10b981;
+    --success-rgb: 16, 185, 129;
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    
+    --warning-color: #f59e0b;
+    --warning-rgb: 245, 158, 11;
+    --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    
+    --danger-color: #ef4444;
+    --danger-rgb: 239, 68, 68;
+    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    
+    --info-color: #06b6d4;
+    --info-rgb: 6, 182, 212;
+    --info-gradient: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+    
+    /* Background Colors - Фоновые цвета */
+    --bg-primary: #f8fafc;
+    --bg-secondary: rgba(255, 255, 255, 0.8);
+    --bg-tertiary: rgba(248, 250, 252, 0.9);
+    --bg-glass: #fff;
+    --bg-glass-hover: #fff;
+    
+    /* Text Colors - Цвета текста */
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    
+    /* Border Colors - Цвета границ */
+    --border-color: rgba(226, 232, 240, 0.8);
+    --border-glass: var(--border-light);
+    --border-light: #e0e0e0;
+}
+```
+
+### 2. Типографика
+```css
+/* Основные шрифты */
+body {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+    font-weight: 400;
+}
+
+/* Заголовки */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* Размеры шрифтов */
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-3xl { font-size: 1.875rem; }
+
+/* Веса шрифтов */
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+```
+
+### 3. Тени и эффекты
+```css
+/* Система теней */
+:root {
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+    --shadow-glass: var(--shadow-md);
+}
+
+/* Применение теней */
+.card {
+    box-shadow: var(--shadow-md);
+    transition: all 0.4s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px) scale(1.02);
+}
+```
+
+## Компоненты интерфейса
+
+### 4. Карточки (Cards)
+```css
+.card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+}
+
+.card-header {
+    background: var(--bg-table-header);
+    border-bottom: 1px solid var(--border-light);
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.card-body {
+    padding: 1.25rem 1.25rem 1rem 1.25rem;
+}
+
+.card-footer {
+    background: var(--bg-table-header);
+    border-top: 1px solid var(--border-light);
+    padding: 0.75rem 1rem;
+    border-radius: 0 0 1.5rem 1.5rem;
+}
+```
+
+### 5. Кнопки (Buttons)
+```css
+.btn {
+    background: var(--bg-main);
+    color: var(--text-main);
+    border: 1px solid var(--border-main);
+    border-radius: 0.75rem;
+    box-shadow: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Primary Button */
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-gradient);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+/* Success Button */
+.btn-success {
+    background: var(--success-gradient);
+    color: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Warning Button */
+.btn-warning {
+    background: var(--warning-gradient);
+    color: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Danger Button */
+.btn-danger {
+    background: var(--danger-gradient);
+    color: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Outline Buttons */
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+```
+
+### 6. Формы (Forms)
+```css
+.form-control {
+    background: var(--bg-main);
+    color: var(--text-main);
+    border: 1px solid var(--border-main);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.form-control:focus {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-select {
+    background: var(--bg-main);
+    color: var(--text-main);
+    border: 1px solid var(--border-main);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-select:focus {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+```
+
+### 7. Таблицы (Tables)
+```css
+.table {
+    background: var(--bg-main);
+    color: var(--text-main);
+    border-collapse: collapse;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.table th, .table td {
+    border: 1px solid var(--border-light);
+    padding: 1rem;
+}
+
+.table th {
+    background: var(--bg-table-header);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.01);
+}
+
+.table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+```
+
+### 8. Бейджи (Badges)
+```css
+.badge {
+    border-radius: 0.75rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Status Badges */
+.badge.bg-pending {
+    background: var(--warning-gradient);
+    color: white;
+}
+
+.badge.bg-in_progress {
+    background: var(--info-gradient);
+    color: white;
+}
+
+.badge.bg-completed {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.badge.bg-cancelled {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+/* Priority Badges */
+.badge.bg-priority-1 {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+.badge.bg-priority-2 {
+    background: var(--warning-gradient);
+    color: white;
+}
+
+.badge.bg-priority-3 {
+    background: var(--info-gradient);
+    color: white;
+}
+
+.badge.bg-priority-4 {
+    background: var(--success-gradient);
+    color: white;
+}
+```
+
+### 9. Алерты (Alerts)
+```css
+.alert {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: var(--text-primary);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--text-primary);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--text-primary);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%);
+    border-color: rgba(6, 182, 212, 0.3);
+    color: var(--text-primary);
+}
+```
+
+## Навигация и макет
+
+### 10. Навигационная панель (Navbar)
+```css
+.navbar {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-md);
+    padding: 1rem 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    position: relative;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    text-shadow: none;
+    transition: all 0.3s ease;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+    margin: 0 0.25rem;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    position: relative;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-nav .nav-link.active {
+    background: var(--bg-glass-hover);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+```
+
+### 11. Боковая панель (Sidebar)
+```css
+#sidebarMenu {
+    background: var(--bg-main);
+    border-right: 1px solid var(--border-light);
+    box-shadow: 2px 0 16px 0 rgba(60, 60, 90, 0.08);
+    border-radius: 0 0 18px 0;
+    min-height: 100vh;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    width: 230px;
+    position: fixed;
+    top: 56px;
+    z-index: 1030;
+}
+
+#sidebarMenu .nav-link {
+    color: var(--text-secondary);
+    font-size: 1.08rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    margin: 0.15rem 0.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+#sidebarMenu .nav-link i {
+    font-size: 1.25em;
+    margin-right: 0.7em;
+    opacity: 0.85;
+}
+
+#sidebarMenu .nav-link.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, var(--bg-main) 100%);
+    color: var(--primary-color);
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 rgba(99, 102, 241, 0.1);
+}
+
+#sidebarMenu .nav-link:hover {
+    background: var(--bg-table-header);
+    color: var(--primary-color);
+    transform: translateX(5px);
+}
+```
+
+### 12. Модальные окна (Modals)
+```css
+.modal-content {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: var(--bg-table-header);
+    border-bottom: 1px solid var(--border-light);
+    padding: 1.5rem;
+    border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    background: var(--bg-table-header);
+    border-top: 1px solid var(--border-light);
+    padding: 1.5rem;
+    border-radius: 0 0 1.5rem 1.5rem;
+}
+
+.modal-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+```
+
+## Анимации и переходы
+
+### 13. Анимации
+```css
+/* Fade In Animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Slide In Up Animation */
+.slide-in-up {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Slide In Right Animation */
+.slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Pulse Animation for Alerts */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    100% {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+```
+
+### 14. Переходы
+```css
+/* Smooth Transitions */
+.smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover Effects */
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+.hover-slide:hover {
+    transform: translateX(5px);
+}
+
+/* Focus Effects */
+.focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+```
+
+## Специальные компоненты
+
+### 15. Приветственный баннер
+```css
+.welcome-banner {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    pointer-events: none;
+    border-radius: 1rem;
+}
+
+.welcome-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
+}
+
+.welcome-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-icon {
+    background: var(--primary-gradient);
+    color: white;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+}
+
+.welcome-badge {
+    background: var(--bg-table-header);
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.welcome-badge:hover {
+    background: var(--bg-glass);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+```
+
+### 16. Уведомления
+```css
+.notification-item {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.notification-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--primary-gradient);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.notification-item:hover {
+    background: var(--bg-table-header);
+    transform: translateX(5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.notification-item:hover::before {
+    opacity: 1;
+}
+```
+
+### 17. Загрузка файлов
+```css
+.file-upload-area {
+    position: relative;
+    border: 2px dashed var(--border-light);
+    border-radius: 1rem;
+    background: var(--bg-main);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-glass-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+}
+
+.file-upload-area.dragover {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.02);
+}
+
+.file-upload-area.has-file {
+    border-color: var(--success-color);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.file-upload-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.file-upload-area:hover .file-upload-icon {
+    transform: scale(1.1);
+    color: var(--primary-color);
+}
+```
+
+## Адаптивность
+
+### 18. Мобильная адаптация
+```css
+/* Mobile First Approach */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .table-responsive {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+    
+    .welcome-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .welcome-icon {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+    }
+    
+    .welcome-title {
+        font-size: 0.9rem;
+    }
+    
+    .welcome-info {
+        justify-content: center;
+        gap: 0.25rem;
+    }
+    
+    .welcome-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+```
+
+## Утилиты
+
+### 19. Вспомогательные классы
+```css
+/* Spacing */
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 3rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 3rem; }
+
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+.p-5 { padding: 3rem; }
+
+/* Text Utilities */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--primary-color); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-success { color: var(--success-color); }
+.text-warning { color: var(--warning-color); }
+.text-danger { color: var(--danger-color); }
+.text-info { color: var(--info-color); }
+
+/* Display Utilities */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-inline { display: inline; }
+.d-inline-block { display: inline-block; }
+
+/* Flexbox Utilities */
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.justify-content-center { justify-content: center; }
+.justify-content-between { justify-content: space-between; }
+.align-items-center { align-items: center; }
+.align-items-start { align-items: flex-start; }
+.align-items-end { align-items: flex-end; }
+
+/* Border Utilities */
+.border { border: 1px solid var(--border-light); }
+.border-top { border-top: 1px solid var(--border-light); }
+.border-bottom { border-bottom: 1px solid var(--border-light); }
+.border-left { border-left: 1px solid var(--border-light); }
+.border-right { border-right: 1px solid var(--border-light); }
+
+.rounded { border-radius: 0.5rem; }
+.rounded-lg { border-radius: 1rem; }
+.rounded-xl { border-radius: 1.5rem; }
+.rounded-full { border-radius: 50%; }
+```
+
+### 20. Скроллбары
+```css
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-table-header);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+```
+
+## Применение в проектах
+
+### 21. Структура CSS файлов
+```
+static/
+├── css/
+│   ├── base.css          # Базовые стили и переменные
+│   ├── components.css    # Компоненты (кнопки, карточки, формы)
+│   ├── layout.css        # Макет (навигация, сайдбар)
+│   ├── utilities.css     # Утилитарные классы
+│   └── responsive.css    # Адаптивные стили
+```
+
+### 22. Импорт в HTML
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Приложение{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+    <link href="{% static 'css/components.css' %}" rel="stylesheet">
+    <link href="{% static 'css/layout.css' %}" rel="stylesheet">
+    <link href="{% static 'css/utilities.css' %}" rel="stylesheet">
+    <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+```
+
+### 23. Примеры использования
+```html
+<!-- Карточка с анимацией -->
+<div class="card fade-in">
+    <div class="card-header">
+        <h5 class="card-title">Заголовок карточки</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Содержимое карточки</p>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary">Действие 1</button>
+            <button class="btn btn-outline-secondary">Действие 2</button>
+        </div>
+    </div>
+</div>
+
+<!-- Уведомление -->
+<div class="alert alert-success">
+    <i class="bi bi-check-circle me-2"></i>
+    Операция выполнена успешно
+</div>
+
+<!-- Форма -->
+<form class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" required>
+    </div>
+    <div class="mb-3">
+        <label for="message" class="form-label">Сообщение</label>
+        <textarea class="form-control" id="message" rows="4"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-send me-2"></i>Отправить
+    </button>
+</form>
+```
+
+## Заключение
+
+Эти правила обеспечивают:
+- **Единообразие** визуального стиля во всех приложениях
+- **Современный дизайн** с использованием градиентов и теней
+- **Адаптивность** для всех устройств
+- **Плавные анимации** и переходы
+- **Доступность** и удобство использования
+- **Масштабируемость** для больших проектов
+
+Следование этим правилам создает узнаваемый корпоративный стиль, который можно легко применять в любых веб-приложениях.
+
+

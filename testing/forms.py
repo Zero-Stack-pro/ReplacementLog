@@ -5,7 +5,6 @@
 """
 
 from django import forms
-from django.contrib.auth.models import User
 
 from shift_log.models import Employee
 
@@ -206,6 +205,26 @@ class FeatureCommentReworkForm(forms.Form):
             raise forms.ValidationError('Причина должна содержать минимум 5 символов')
         
         return reason.strip()
+
+
+class FeatureCommentCompleteForm(forms.Form):
+    """Форма для завершения замечания"""
+    
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Дополнительный комментарий к завершению замечания (необязательно)'
+        }),
+        label='Комментарий к завершению',
+        help_text='Дополнительный комментарий к завершению замечания'
+    )
+
+    def clean_comment(self):
+        """Валидация комментария"""
+        comment = self.cleaned_data.get('comment', '')
+        return comment.strip()
 
 
 class FeatureStatusUpdateForm(forms.Form):
