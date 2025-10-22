@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DetailView, ListView, UpdateView,
                                   View)
@@ -631,7 +631,8 @@ class FeatureResolveCommentView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request, f'Ошибка при отметке замечания: {str(e)}')
         
-        return redirect('testing:feature_detail', pk=pk)
+        redirect_url = f"{reverse('testing:feature_detail', kwargs={'pk': pk})}#comment-{comment_id}"
+        return redirect(redirect_url)
 
 
 class FeatureCommentReturnToReworkView(LoginRequiredMixin, View):
@@ -671,7 +672,8 @@ class FeatureCommentReturnToReworkView(LoginRequiredMixin, View):
                 for error in errors:
                     messages.error(request, f'{form.fields[field].label}: {error}')
         
-        return redirect('testing:feature_detail', pk=pk)
+        redirect_url = f"{reverse('testing:feature_detail', kwargs={'pk': pk})}#comment-{comment_id}"
+        return redirect(redirect_url)
 
 
 class FeatureCommentCompleteView(LoginRequiredMixin, View):
@@ -711,4 +713,5 @@ class FeatureCommentCompleteView(LoginRequiredMixin, View):
                 for error in errors:
                     messages.error(request, f'{form.fields[field].label}: {error}')
         
-        return redirect('testing:feature_detail', pk=pk)
+        redirect_url = f"{reverse('testing:feature_detail', kwargs={'pk': pk})}#comment-{comment_id}"
+        return redirect(redirect_url)

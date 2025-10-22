@@ -68,7 +68,7 @@
                         <div class="card-body">
                             {% if open_comments %}
                             {% for comment in open_comments %}
-                            <div class="border-start border-4 border-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ps-3 mb-3">
+                            <div class="border-start border-4 border-{% if comment.comment_type == 'remark' %}danger{% elif comment.comment_type == 'approval' %}success{% else %}info{% endif %} ps-3 mb-3" id="comment-{{ comment.pk }}">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <strong>{{ comment.author.get_full_name }}</strong>
@@ -125,7 +125,7 @@
                         </div>
                         <div class="card-body">
                             {% for comment in resolved_comments %}
-                            <div class="border-start border-4 border-success ps-3 mb-3">
+                            <div class="border-start border-4 border-success ps-3 mb-3" id="comment-{{ comment.pk }}">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <strong>{{ comment.author.get_full_name }}</strong>
@@ -177,7 +177,7 @@
                         </div>
                         <div class="card-body" id="completedCommentsContent">
                             {% for comment in completed_comments %}
-                            <div class="border-start border-4 border-success ps-3 mb-3">
+                            <div class="border-start border-4 border-success ps-3 mb-3" id="comment-{{ comment.pk }}">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <strong>{{ comment.author.get_full_name }}</strong>
@@ -385,6 +385,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализация состояния завершенных замечаний
     initializeCompletedCommentsToggle();
+    
+    // Плавная прокрутка к замечанию при наличии якорной ссылки
+    scrollToCommentIfNeeded();
 });
 
 // Функция для отметки как выполненный
@@ -616,6 +619,40 @@ function showCompletedComments() {
     if (card) {
         card.classList.remove('completed-comments-hidden');
         card.classList.add('completed-comments-visible');
+    }
+}
+
+// Функция для плавной прокрутки к замечанию
+function scrollToCommentIfNeeded() {
+    // Проверяем, есть ли якорная ссылка в URL
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#comment-')) {
+        const commentId = hash.substring(9); // Убираем '#comment-'
+        const commentElement = document.getElementById(`comment-${commentId}`);
+        
+        if (commentElement) {
+            // Небольшая задержка для завершения загрузки страницы
+            setTimeout(() => {
+                // Плавная прокрутка к элементу
+                commentElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                
+                // Добавляем визуальное выделение
+                commentElement.style.transition = 'all 0.3s ease';
+                commentElement.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                commentElement.style.borderColor = 'var(--primary-color)';
+                commentElement.style.transform = 'scale(1.02)';
+                
+                // Убираем выделение через 2 секунды
+                setTimeout(() => {
+                    commentElement.style.backgroundColor = '';
+                    commentElement.style.borderColor = '';
+                    commentElement.style.transform = '';
+                }, 2000);
+            }, 100);
+        }
     }
 }
 </script>
