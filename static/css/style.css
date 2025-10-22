@@ -2791,4 +2791,152 @@ hr {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
     color: var(--text-primary);
+}
+
+/* ===== СТИЛИ ДЛЯ СКРЫТИЯ/ПОКАЗА ЗАВЕРШЕННЫХ ЗАМЕЧАНИЙ ===== */
+#completedCommentsContent {
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+#completedCommentsContent.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    transform: translateY(-10px);
+}
+
+#completedCommentsContent.visible {
+    max-height: 1000px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Кнопка переключения завершенных замечаний */
+#toggleCompletedCommentsBtn {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#toggleCompletedCommentsBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#toggleCompletedCommentsBtn:active {
+    transform: translateY(0);
+}
+
+#toggleCompletedCommentsBtn i {
+    transition: transform 0.3s ease;
+}
+
+#toggleCompletedCommentsBtn:hover i {
+    transform: scale(1.1);
+}
+
+/* Анимация для иконки глаза завершенных замечаний */
+#toggleCompletedCommentsBtn.clicked i {
+    animation: eyeBlink 0.3s ease;
+}
+
+/* Плавное появление/исчезновение элементов завершенных замечаний */
+#completedCommentsContent .border-start {
+    transition: all 0.3s ease;
+}
+
+#completedCommentsContent.hidden .border-start {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+#completedCommentsContent.visible .border-start {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Задержка для каждого элемента завершенных замечаний */
+#completedCommentsContent.visible .border-start:nth-child(1) { transition-delay: 0.1s; }
+#completedCommentsContent.visible .border-start:nth-child(2) { transition-delay: 0.2s; }
+#completedCommentsContent.visible .border-start:nth-child(3) { transition-delay: 0.3s; }
+#completedCommentsContent.visible .border-start:nth-child(4) { transition-delay: 0.4s; }
+#completedCommentsContent.visible .border-start:nth-child(5) { transition-delay: 0.5s; }
+#completedCommentsContent.visible .border-start:nth-child(n+6) { transition-delay: 0.6s; }
+
+/* Стили для состояния "скрыто" завершенных замечаний */
+.completed-comments-hidden #completedCommentsContent {
+    display: none !important;
+}
+
+.completed-comments-hidden #toggleCompletedCommentsBtn {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.completed-comments-hidden #toggleCompletedCommentsBtn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* Стили для состояния "показано" завершенных замечаний */
+.completed-comments-visible #completedCommentsContent {
+    display: block !important;
+}
+
+.completed-comments-visible #toggleCompletedCommentsBtn {
+    background: rgba(108, 117, 125, 0.1);
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+.completed-comments-visible #toggleCompletedCommentsBtn:hover {
+    background: rgba(108, 117, 125, 0.2);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    #toggleCompletedCommentsBtn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    #toggleCompletedCommentsBtn span {
+        display: none;
+    }
+    
+    #toggleCompletedCommentsBtn i {
+        font-size: 1rem;
+    }
+}
+
+/* Темная тема для завершенных замечаний */
+[data-theme="dark"] #toggleCompletedCommentsBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #toggleCompletedCommentsBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .completed-comments-hidden #toggleCompletedCommentsBtn {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .completed-comments-visible #toggleCompletedCommentsBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-primary);
 } 

@@ -162,13 +162,20 @@
                     <!-- Завершенные замечания -->
                     {% if completed_comments %}
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-check2-circle"></i>
                                 Завершенные замечания
                             </h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleCompletedCommentsBtn" 
+                                    data-feature-id="{{ feature.pk }}" 
+                                    data-project-id="{{ feature.test_project.pk }}"
+                                    title="Скрыть/показать завершенные замечания">
+                                <i class="bi bi-eye-slash" id="completedCommentsIcon"></i>
+                                <span id="completedCommentsText">Скрыть</span>
+                            </button>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" id="completedCommentsContent">
                             {% for comment in completed_comments %}
                             <div class="border-start border-4 border-success ps-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -375,6 +382,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализация состояния истории
     initializeHistoryToggle();
+    
+    // Инициализация состояния завершенных замечаний
+    initializeCompletedCommentsToggle();
 });
 
 // Функция для отметки как выполненный
@@ -502,6 +512,110 @@ function showHistory() {
     if (card) {
         card.classList.remove('history-hidden');
         card.classList.add('history-visible');
+    }
+}
+
+// Функции для управления завершенными замечаниями
+function initializeCompletedCommentsToggle() {
+    const toggleBtn = document.getElementById('toggleCompletedCommentsBtn');
+    const completedCommentsContent = document.getElementById('completedCommentsContent');
+    
+    if (!toggleBtn || !completedCommentsContent) {
+        return; // Элементы не найдены, выходим
+    }
+    
+    const projectId = toggleBtn.getAttribute('data-project-id');
+    const featureId = toggleBtn.getAttribute('data-feature-id');
+    const storageKey = `feature_completed_comments_hidden_project_${projectId}_feature_${featureId}`;
+    
+    // Проверяем сохраненное состояние
+    const isHidden = localStorage.getItem(storageKey) === 'true';
+    
+    if (isHidden) {
+        hideCompletedComments();
+    } else {
+        showCompletedComments();
+    }
+    
+    // Добавляем обработчик клика
+    toggleBtn.addEventListener('click', function() {
+        const isCurrentlyHidden = completedCommentsContent.classList.contains('hidden') || 
+                                 completedCommentsContent.style.display === 'none';
+        
+        // Добавляем анимацию клика
+        toggleBtn.classList.add('clicked');
+        setTimeout(() => toggleBtn.classList.remove('clicked'), 300);
+        
+        if (isCurrentlyHidden) {
+            showCompletedComments();
+        } else {
+            hideCompletedComments();
+        }
+        
+        // Сохраняем состояние в localStorage
+        localStorage.setItem(storageKey, (!isCurrentlyHidden).toString());
+    });
+}
+
+function hideCompletedComments() {
+    const completedCommentsContent = document.getElementById('completedCommentsContent');
+    const completedCommentsIcon = document.getElementById('completedCommentsIcon');
+    const completedCommentsText = document.getElementById('completedCommentsText');
+    const card = completedCommentsContent.closest('.card');
+    
+    if (completedCommentsContent) {
+        // Добавляем классы для анимации
+        completedCommentsContent.classList.remove('visible');
+        completedCommentsContent.classList.add('hidden');
+        
+        // Устанавливаем display: none после завершения анимации
+        setTimeout(() => {
+            completedCommentsContent.style.display = 'none';
+        }, 300);
+    }
+    
+    if (completedCommentsIcon) {
+        completedCommentsIcon.className = 'bi bi-eye';
+    }
+    
+    if (completedCommentsText) {
+        completedCommentsText.textContent = 'Показать';
+    }
+    
+    if (card) {
+        card.classList.remove('completed-comments-visible');
+        card.classList.add('completed-comments-hidden');
+    }
+}
+
+function showCompletedComments() {
+    const completedCommentsContent = document.getElementById('completedCommentsContent');
+    const completedCommentsIcon = document.getElementById('completedCommentsIcon');
+    const completedCommentsText = document.getElementById('completedCommentsText');
+    const card = completedCommentsContent.closest('.card');
+    
+    if (completedCommentsContent) {
+        // Сначала показываем элемент
+        completedCommentsContent.style.display = 'block';
+        
+        // Затем запускаем анимацию
+        setTimeout(() => {
+            completedCommentsContent.classList.remove('hidden');
+            completedCommentsContent.classList.add('visible');
+        }, 10);
+    }
+    
+    if (completedCommentsIcon) {
+        completedCommentsIcon.className = 'bi bi-eye-slash';
+    }
+    
+    if (completedCommentsText) {
+        completedCommentsText.textContent = 'Скрыть';
+    }
+    
+    if (card) {
+        card.classList.remove('completed-comments-hidden');
+        card.classList.add('completed-comments-visible');
     }
 }
 </script>
