@@ -415,12 +415,17 @@
             <div class="card-body">
                 {% if notifications %}
                     {% for notification in notifications %}
-                    <div class="notification-item mb-3 p-3 border-start border-warning border-4 bg-light">
+                    <div class="notification-item mb-3 p-3 border-start border-warning border-4 bg-light {% if notification.get_target_url %}notification-card{% endif %}"
+                         {% if notification.get_target_url %}
+                         role="button"
+                         style="cursor: pointer;"
+                         data-target-url="{{ notification.get_target_url }}"
+                         {% endif %}>
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <h6 class="mb-1 fw-bold">
-                                    {% if notification.is_task_related and notification.get_task_url %}
-                                        <a href="{{ notification.get_task_url }}" class="text-decoration-none">
+                                    {% if notification.get_target_url %}
+                                        <a href="{{ notification.get_target_url }}" class="text-decoration-none">
                                             {{ notification.title }}
                                             <i class="bi bi-arrow-right-circle ms-1"></i>
                                         </a>
@@ -437,16 +442,16 @@
                                         {% if not notification.is_read %}
                                             <span class="badge bg-danger">Новое</span>
                                         {% endif %}
-                                        {% if notification.is_task_related and notification.get_task_url %}
-                                            <a href="{{ notification.get_task_url }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye"></i> Перейти к задаче
+                                        {% if notification.get_target_url %}
+                                            <a href="{{ notification.get_target_url }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Открыть
                                             </a>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
                             {% if not notification.is_read %}
-                            <button class="btn btn-sm btn-outline-success mark-read ms-2" 
+                            <button type="button" class="btn btn-sm btn-outline-success mark-read ms-2" 
                                     data-notification-id="{{ notification.id }}"
                                     title="Отметить как прочитанное">
                                 <i class="bi bi-check-lg"></i>

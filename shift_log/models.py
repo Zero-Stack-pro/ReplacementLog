@@ -804,6 +804,72 @@ class Notification(models.Model):
             return reverse('shift_log:task_detail', kwargs={'pk': task.pk})
         return None
 
+    # ----- Навигация к связанному объекту -----
+    def get_related_feature(self):
+        """Возвращает связанный функционал (testing.Feature), если возможно определить"""
+        # Извлекаем заголовок функционала из уведомления
+        feature_title = self.extract_feature_title()
+        if not feature_title:
+            return None
+        try:
+            from testing.models import Feature
+            return Feature.objects.filter(title=feature_title).first()
+        except Exception:
+            return None
+
+    def extract_feature_title(self):
+        """Пробует извлечь название функционала из сообщения/заголовка уведомления"""
+        import re
+
+        # Паттерны для извлечения названия функционала
+        patterns = [
+            r'функционал "([^"]+)"',
+            r'функционала "([^"]+)"',
+            r'функционалу "([^"]+)"',
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, self.message, re.IGNORECASE)
+            if match:
+                return match.group(1)
+
+        # Заголовки вида "Новый функционал: <title>" или "Статус изменен: <title>"
+        prefixes = [
+            'Новый функционал: ',
+            'Статус изменен: ',
+            'Новое замечание: ',
+            'Замечание возвращено на доработку: ',
+            'Замечание решено: ',
+            'Замечание завершено: ',
+        ]
+        for prefix in prefixes:
+            if self.title.startswith(prefix):
+                return self.title.replace(prefix, '')
+
+        return None
+
+    def get_feature_url(self):
+        """Возвращает URL функционала, если уведомление относится к тестированию"""
+        try:
+            feature = self.get_related_feature()
+            if feature:
+                from django.urls import reverse
+                return reverse('testing:feature_detail', kwargs={'pk': feature.pk})
+        except Exception:
+            return None
+        return None
+
+    def get_target_url(self):
+        """Единая точка получения ссылки назначения для уведомления"""
+        # Приоритет: задача → функционал → (можно расширить для смен и др.)
+        url = self.get_task_url()
+        if url:
+            return url
+        url = self.get_feature_url()
+        if url:
+            return url
+        return None
+
 
 class ActivityLog(models.Model):
     """Модель журнала активности (история изменений)"""

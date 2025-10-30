@@ -164,7 +164,10 @@ function initNotifications() {
     }
 
     // Отметить уведомление как прочитанное
-    $(document).on('click', '.mark-read', function () {
+    $(document).on('click', '.mark-read', function (e) {
+        // Предотвращаем переход по кликабельной карточке уведомления
+        e.preventDefault();
+        e.stopPropagation();
         var notificationId = $(this).data('notification-id');
         var button = $(this);
 
@@ -193,7 +196,7 @@ function initNotifications() {
                             console.log('Оставшиеся уведомления:', remainingNotifications);
                             if (remainingNotifications === 0) {
                                 // Если уведомлений больше нет, показываем сообщение
-                                var cardBody = $('.card-body');
+                                var cardBody = notificationsCard.find('.card-body');
                                 if (cardBody.length > 0) {
                                     cardBody.html('<div class="text-center py-4"><i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i><p class="text-muted mt-2">Нет новых уведомлений</p></div>');
                                 }
@@ -232,9 +235,24 @@ function initNotifications() {
         });
     });
 
+    // Кликабельная карточка уведомления: навигируем только если клик не по интерактивным элементам
+    $(document).on('click', '.notification-card', function (e) {
+        // Игнорируем клики по интерактивным элементам внутри карточки
+        if ($(e.target).closest('.mark-read, .mark-all-read, .btn, a, input, textarea, select, label').length) {
+            return; // не навигируем
+        }
+        var url = $(this).data('target-url');
+        if (url) {
+            window.location.href = url;
+        }
+    });
+
     // Отметить все уведомления как прочитанные
     console.log('Регистрируем обработчик для .mark-all-read');
-    $(document).on('click', '.mark-all-read', function () {
+    $(document).on('click', '.mark-all-read', function (e) {
+        // Предотвращаем срабатывание родительских обработчиков (кликабельная карточка)
+        e.preventDefault();
+        e.stopPropagation();
         console.log('Кнопка "Отметить все как прочитанные" нажата');
         var button = $(this);
         var cardBody = button.closest('.card').find('.card-body');
