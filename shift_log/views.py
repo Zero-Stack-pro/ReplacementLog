@@ -498,8 +498,8 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
             object_id=task.id
         )
 
-        # Добавляем форму изменения статуса
-        status_form = TaskStatusUpdateForm(initial={'status': task.status})
+        # Добавляем форму изменения статуса с учетом прав
+        status_form = TaskStatusUpdateForm(initial={'status': task.status}, user=self.request.user, task=task)
         
         # Проверяем права на изменение статуса
         can_update_status = self.can_update_status()
@@ -510,6 +510,7 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
             'can_edit_task': self.can_edit_task(),
             'status_form': status_form,
             'can_update_status': can_update_status,
+            'status_options': [(value, dict(Task.STATUS_CHOICES).get(value, value)) for value, _ in status_form.fields['status'].choices],
         })
         return context
 
@@ -538,19 +539,15 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         employee = self.request.user.employee
         task = self.get_object()
         
-        # Администраторы могут изменять статус любого задания
+        # Администраторы и руководители могут изменять любой статус в рамках доступа
         if employee.position == 'admin':
             return True
-        
-        # Руководители могут изменять статус заданий своего отдела
         if employee.position == 'supervisor' and task.department == employee.department:
             return True
         
-        # Обычные сотрудники могут изменять статус своих заданий или общих задач отдела
+        # Обычные сотрудники могут менять только на in_progress и completed
         if employee.position == 'employee':
-            if task.task_scope == 'general' and task.department == employee.department:
-                return True
-            elif task.assigned_to == employee:
+            if task.assigned_to == employee or (task.task_scope == 'general' and task.department == employee.department):
                 return True
         
         return False
@@ -1094,7 +1091,7 @@ class TaskStatusUpdateView(LoginRequiredMixin, View):
             messages.error(request, 'У вас нет прав для изменения статуса этого задания')
             return redirect('shift_log:task_detail', pk=pk)
         
-        form = TaskStatusUpdateForm(request.POST)
+        form = TaskStatusUpdateForm(request.POST, user=request.user, task=task)
         if form.is_valid():
             old_status = task.status
             new_status = form.cleaned_data['status']
@@ -1106,6 +1103,9 @@ class TaskStatusUpdateView(LoginRequiredMixin, View):
             # Если статус меняется на "завершено", устанавливаем время завершения
             if new_status == 'completed' and old_status != 'completed':
                 task.completed_at = timezone.now()
+            # Если возвращено на доработку, снимаем время завершения при необходимости
+            if new_status == 'rework':
+                task.completed_at = None
             
             task.save()
             

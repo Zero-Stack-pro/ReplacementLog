@@ -498,6 +498,7 @@ class Task(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Ожидает'),
         ('in_progress', 'В работе'),
+        ('rework', 'Возвращено на доработку'),
         ('completed', 'Завершено'),
         ('cancelled', 'Отменено'),
     ]

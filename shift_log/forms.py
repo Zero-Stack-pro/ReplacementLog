@@ -500,6 +500,7 @@ class TaskStatusUpdateForm(forms.Form):
     STATUS_CHOICES = [
         ('pending', 'Ожидает'),
         ('in_progress', 'В работе'),
+        ('rework', 'Возвращено на доработку'),
         ('completed', 'Завершено'),
         ('cancelled', 'Отменено'),
     ]
@@ -520,15 +521,44 @@ class TaskStatusUpdateForm(forms.Form):
         label="Комментарий"
     )
     
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.task = kwargs.pop('task', None)
+        super().__init__(*args, **kwargs)
+
+        # Фильтруем доступные статусы по роли
+        allowed_statuses = self.get_allowed_statuses()
+        self.fields['status'].choices = [
+            (value, dict(self.STATUS_CHOICES).get(value, value))
+            for value in allowed_statuses
+        ]
+
+    def get_allowed_statuses(self):
+        """Возвращает список статусов, доступных текущему пользователю"""
+        if self.user and hasattr(self.user, 'employee'):
+            employee = self.user.employee
+            if employee.position in ['admin', 'supervisor']:
+                return [v for v, _ in self.STATUS_CHOICES]
+            else:
+                # Сотрудник: только принять в работу и завершить
+                return ['in_progress', 'completed']
+        # По умолчанию безопасный набор
+        return ['in_progress', 'completed']
+
     def clean(self):
         cleaned_data = super().clean()
         status = cleaned_data.get('status')
         comment = cleaned_data.get('comment')
+        allowed_statuses = self.get_allowed_statuses()
+
+        # Проверяем доступность выбранного статуса
+        if status and status not in allowed_statuses:
+            raise forms.ValidationError('У вас нет прав для установки выбранного статуса')
         
-        # Если статус меняется на "завершено", комментарий обязателен
-        if status == 'completed' and not comment:
+        # Комментарий обязателен для завершения и возврата на доработку
+        if status in ['completed', 'rework'] and not comment:
             raise forms.ValidationError(
-                'При завершении задания обязательно укажите комментарий'
+                'Для выбранного статуса обязательно укажите комментарий'
             )
         
         return cleaned_data 

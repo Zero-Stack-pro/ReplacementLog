@@ -803,17 +803,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="mb-3">
                                         <label for="id_status" class="form-label">Новый статус</label>
                                         <select name="status" id="id_status" class="form-control">
-                                            <option value="pending">Ожидает</option>
-                                            <option value="in_progress">В работе</option>
-                                            <option value="completed">Завершено</option>
-                                            <option value="cancelled">Отменено</option>
+                                            {% for value, label in status_form.fields.status.choices %}
+                                                <option value="{{ value }}">{{ label }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                     
                                     <div class="mb-3">
                                         <label for="id_comment" class="form-label">Комментарий</label>
                                         <textarea name="comment" id="id_comment" class="form-control" rows="3" placeholder="Введите комментарий к изменению статуса..."></textarea>
-                                        <div class="form-text">При изменении статуса на "Завершено" комментарий обязателен</div>
+                                        <div class="form-text">Комментарий обязателен для статусов "Завершено" и "Возвращено на доработку"</div>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -850,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 function toggleCommentField() {
                     const selectedStatus = statusSelect.value;
                     
-                    if (selectedStatus === 'completed') {
+                    if (selectedStatus === 'completed' || selectedStatus === 'rework') {
                         commentField.required = true;
                         commentField.classList.add('border-warning');
                     } else {
