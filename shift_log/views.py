@@ -169,7 +169,7 @@ def dashboard(request):
     # Получаем активные задания в зависимости от роли
     if employee.position == 'admin':
         active_tasks = Task.objects.filter(
-            status__in=['pending', 'in_progress']
+            status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
@@ -177,7 +177,7 @@ def dashboard(request):
     elif employee.position == 'supervisor':
         active_tasks = Task.objects.filter(
             department=employee.department,
-            status__in=['pending', 'in_progress']
+            status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
@@ -187,7 +187,7 @@ def dashboard(request):
         active_tasks = Task.objects.filter(
             Q(assigned_to=employee) |
             Q(department=employee.department, task_scope='general'),
-            status__in=['pending', 'in_progress']
+            status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
             'department', 'assigned_to', 'assigned_to__user'
         )
