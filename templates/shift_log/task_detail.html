@@ -108,6 +108,8 @@
                                 <span class="badge bg-primary">В работе</span>
                             {% elif task.status == 'pending' %}
                                 <span class="badge bg-warning">Ожидает</span>
+                            {% elif task.status == 'rework' %}
+                                <span class="badge bg-danger">Возвращено на доработку</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ task.get_status_display }}</span>
                             {% endif %}

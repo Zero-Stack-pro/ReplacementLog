@@ -185,6 +185,7 @@ def get_task_status_color(status: str) -> str:
     colors = {
         'pending': 'warning',
         'in_progress': 'primary',
+        'rework': 'danger',
         'completed': 'success',
         'cancelled': 'danger',
     }
