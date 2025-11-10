@@ -2,11 +2,13 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
 from .models import (ActivityLog, Department, Employee, Notification, Shift,
                      ShiftType)
+from .services.telegram_service import TelegramService
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,12 @@ def log_activity(user, action, model_name, object_id, object_repr, description="
         logger.error(f"Error logging activity: {e}")
 
 
-def send_notification(recipient, notification_type, title, message):
+def send_notification(
+    recipient: Employee,
+    notification_type: str,
+    title: str,
+    message: str
+) -> None:
     """
     Отправляет уведомление пользователю
     
@@ -56,15 +63,18 @@ def send_notification(recipient, notification_type, title, message):
             message=message
         )
         
-        # Здесь можно добавить отправку через Telegram или email
-        # send_telegram_notification(recipient, title, message)
+        # Отправляем уведомление в Telegram, если у сотрудника указан telegram_id
+        if recipient.telegram_id and settings.TELEGRAM_NOTIFICATIONS_ENABLED:
+            send_telegram_notification(recipient, title, message)
+        
+        # Здесь можно добавить отправку через email
         # send_email_notification(recipient, title, message)
         
     except Exception as e:
         logger.error(f"Error sending notification: {e}")
 
 
-def send_telegram_notification(employee, title, message):
+def send_telegram_notification(employee: Employee, title: str, message: str) -> None:
     """
     Отправляет уведомление через Telegram
     
@@ -74,14 +84,18 @@ def send_telegram_notification(employee, title, message):
         message: Текст уведомления
     """
     if not employee.telegram_id:
+        logger.debug(f"У сотрудника {employee} не указан telegram_id, пропускаем отправку")
         return
     
     try:
-        # Здесь должна быть интеграция с Telegram Bot API
-        # Для этого нужно настроить бота и получить токен
-        pass
+        TelegramService.send_message(
+            chat_id=employee.telegram_id,
+            title=title,
+            message=message
+        )
     except Exception as e:
-        logger.error(f"Error sending Telegram notification: {e}")
+        # Логируем ошибку, но не прерываем выполнение основного потока
+        logger.error(f"Error sending Telegram notification to {employee}: {e}")
 
 
 def send_email_notification(employee, title, message):
