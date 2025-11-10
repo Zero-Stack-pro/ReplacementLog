@@ -56,7 +56,9 @@ except ImportError:
     }
 
 # Static files optimization
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+# Используем обычное хранилище, так как ManifestStaticFilesStorage требует collectstatic с --clear
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# Если нужен ManifestStaticFilesStorage, выполните: python manage.py collectstatic --clear
 
 # Logging configuration
 LOGGING = {
