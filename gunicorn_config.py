@@ -48,8 +48,8 @@ worker_class = 'sync'  # sync для большинства случаев, geve
 # Worker connections (для gevent)
 worker_connections = 1000
 
-# PID файл
-pidfile = '/var/run/replacementlog.pid'
+# PID файл (systemd управляет PID, но можно указать для совместимости)
+# pidfile = '/var/run/replacementlog.pid'  # Закомментировано, так как systemd управляет процессом
 
 # Daemon mode (будет управляться systemd)
 daemon = False
