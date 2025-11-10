@@ -13,7 +13,7 @@ Telegram уведомления не приходили на сервере, х�
 
 Файл `/home/zero/ReplacementLog/.env` содержит:
 ```
-TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
 TELEGRAM_NOTIFICATIONS_ENABLED=True
 ```
 
@@ -117,7 +117,7 @@ nohup python3 manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
 ## Дополнительная информация
 
 - Бот: @replacementlog_bot
-- Токен: 8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+- Токен: YOUR_TELEGRAM_BOT_TOKEN_HERE
 - Сервер: 10.45.20.40
 - Проект: /home/zero/ReplacementLog
 

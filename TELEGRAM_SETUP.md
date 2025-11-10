@@ -6,29 +6,29 @@
 
 ### Linux/macOS:
 ```bash
-export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 ```
 
 ### Для постоянной установки (добавьте в ~/.bashrc или ~/.zshrc):
 ```bash
-echo 'export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"' >> ~/.bashrc
+echo 'export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 ### Windows (PowerShell):
 ```powershell
-$env:TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+$env:TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 ```
 
 ### Windows (CMD):
 ```cmd
-set TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+set TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
 ```
 
 ### Для production (systemd service, docker-compose, etc.):
 Добавьте в файл конфигурации вашего сервиса:
 ```
-Environment="TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+Environment="TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE"
 ```
 
 ## 2. Установка telegram_id для сотрудника

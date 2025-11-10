@@ -85,7 +85,7 @@ nslookup api.telegram.org
 python3 -c "import socket; print(socket.gethostbyname('api.telegram.org'))"
 
 # Проверка Telegram API
-curl https://api.telegram.org/bot8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ/getMe
+curl https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN_HERE/getMe
 ```
 
 ## После исправления DNS

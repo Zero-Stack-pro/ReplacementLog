@@ -23,7 +23,7 @@ if token:
     print(f'✓ Токен установлен: {token[:10]}...{token[-10:]}')
 else:
     print('✗ Токен НЕ установлен!')
-    print('  Нужно установить: export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"')
+    print('  Нужно установить: export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"')
 
 # Проверка бота
 bot = TelegramService.get_bot()
@@ -66,7 +66,7 @@ python check_telegram_shell.py
 echo $TELEGRAM_BOT_TOKEN
 
 # Если пусто, установите:
-export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 
 # Проверьте снова
 echo $TELEGRAM_BOT_TOKEN
@@ -95,7 +95,7 @@ sudo nano /etc/systemd/system/your-app.service
 
 Добавьте в `[Service]`:
 ```ini
-Environment="TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+Environment="TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE"
 ```
 
 Затем:
@@ -111,7 +111,7 @@ sudo systemctl restart your-app
 ### Временная установка (для теста):
 
 ```bash
-export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 # Затем перезапустите приложение
 ```
 

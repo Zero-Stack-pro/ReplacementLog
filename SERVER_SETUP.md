@@ -33,7 +33,7 @@ sudo nano /etc/systemd/system/your-app.service
 
 ```ini
 [Service]
-Environment="TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+Environment="TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE"
 Environment="TELEGRAM_NOTIFICATIONS_ENABLED=True"
 ```
 
@@ -54,7 +54,7 @@ nano /path/to/your/app/.env
 
 Добавьте:
 ```
-TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
 TELEGRAM_NOTIFICATIONS_ENABLED=True
 ```
 
@@ -73,7 +73,7 @@ gunicorn shift_log_project.wsgi:application
 
 ```ini
 [program:your-app]
-environment=TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ",TELEGRAM_NOTIFICATIONS_ENABLED="True"
+environment=TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE",TELEGRAM_NOTIFICATIONS_ENABLED="True"
 ```
 
 Перезагрузите:
@@ -91,20 +91,20 @@ sudo supervisorctl restart your-app
 services:
   web:
     environment:
-      - TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+      - TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
       - TELEGRAM_NOTIFICATIONS_ENABLED=True
 ```
 
 Или в `.env` файле:
 ```
-TELEGRAM_BOT_TOKEN=8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ
+TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN_HERE
 TELEGRAM_NOTIFICATIONS_ENABLED=True
 ```
 
 ### Вариант E: Временная установка (для тестирования)
 
 ```bash
-export TELEGRAM_BOT_TOKEN="8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ"
+export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 export TELEGRAM_NOTIFICATIONS_ENABLED="True"
 ```
 
@@ -131,7 +131,7 @@ python manage.py shell
 Убедитесь, что сервер может обращаться к API Telegram:
 
 ```bash
-curl https://api.telegram.org/bot8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ/getMe
+curl https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN_HERE/getMe
 ```
 
 Должен вернуться JSON с информацией о боте.
@@ -192,7 +192,7 @@ python manage.py check_telegram
 echo $TELEGRAM_BOT_TOKEN
 
 # 3. Проверка доступа к API
-curl -s https://api.telegram.org/bot8391231295:AAE1UNo_b3IH1CB29ktSAYIM41s1dg8oFrQ/getMe | python -m json.tool
+curl -s https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN_HERE/getMe | python -m json.tool
 
 # 4. Проверка логов (если есть)
 tail -n 50 /path/to/logs/*.log | grep -i telegram
