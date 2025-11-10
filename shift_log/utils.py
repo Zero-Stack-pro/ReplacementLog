@@ -88,14 +88,19 @@ def send_telegram_notification(employee: Employee, title: str, message: str) -> 
         return
     
     try:
-        TelegramService.send_message(
+        logger.info(f"Попытка отправки Telegram уведомления: {title} → {employee.get_full_name()} (telegram_id: {employee.telegram_id})")
+        result = TelegramService.send_message(
             chat_id=employee.telegram_id,
             title=title,
             message=message
         )
+        if result:
+            logger.info(f"✓ Telegram уведомление успешно отправлено: {title} → {employee.get_full_name()}")
+        else:
+            logger.warning(f"✗ Telegram уведомление не отправлено (вернуло False): {title} → {employee.get_full_name()}")
     except Exception as e:
         # Логируем ошибку, но не прерываем выполнение основного потока
-        logger.error(f"Error sending Telegram notification to {employee}: {e}")
+        logger.error(f"Error sending Telegram notification to {employee}: {e}", exc_info=True)
 
 
 def send_email_notification(employee, title, message):
