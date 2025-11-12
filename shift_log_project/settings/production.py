@@ -55,10 +55,12 @@ except ImportError:
         }
     }
 
-# Static files optimization
-# Используем обычное хранилище, так как ManifestStaticFilesStorage требует collectstatic с --clear
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-# Если нужен ManifestStaticFilesStorage, выполните: python manage.py collectstatic --clear
+# Static files optimization with WhiteNoise
+# WhiteNoise позволяет Django раздавать статические файлы в production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# WhiteNoise middleware должен быть сразу после SecurityMiddleware
+# (уже добавлен в base.py, но убедимся что он в правильном порядке)
 
 # Logging configuration
 LOGGING = {
