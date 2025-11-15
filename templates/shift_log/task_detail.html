@@ -67,6 +67,21 @@
                         <p>{{ task.department.name }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Проект:</label>
+                        <p>
+                            {% if task.project %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-folder"></i> {{ task.project.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Не указан</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Исполнитель:</label>
                         <p>
                             {% if task.assigned_to %}

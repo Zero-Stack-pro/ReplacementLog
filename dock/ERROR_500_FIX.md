@@ -53,3 +53,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesSto
 - Статические файлы загружаются (CSS, JS, изображения)
 - Нет ошибок в логах
 
+
+
+
+

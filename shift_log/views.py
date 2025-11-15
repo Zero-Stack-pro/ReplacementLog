@@ -24,7 +24,7 @@ from .forms import (AttachmentForm, DailyReportForm, MaterialWriteOffForm,
 from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
                      Department, Employee, MaterialWriteOff, Note,
                      Notification, Project, ProjectTask, Shift, ShiftLog, Task,
-                     TaskReport)
+                     TaskProject, TaskReport)
 from .utils import log_activity, send_notification
 
 
@@ -403,7 +403,7 @@ class TaskListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Task.objects.select_related(
-            'department', 'assigned_to', 'created_by'
+            'department', 'assigned_to', 'created_by', 'project'
         ).exclude(
             status__in=['completed', 'cancelled']
         )
@@ -426,6 +426,10 @@ class TaskListView(LoginRequiredMixin, ListView):
             if form.cleaned_data.get('department'):
                 queryset = queryset.filter(
                     department=form.cleaned_data['department']
+                )
+            if form.cleaned_data.get('project'):
+                queryset = queryset.filter(
+                    project=form.cleaned_data['project']
                 )
             if form.cleaned_data.get('status'):
                 queryset = queryset.filter(
@@ -463,6 +467,13 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
     model = Task
     template_name = 'shift_log/task_detail.html'
     context_object_name = 'task'
+
+    def get_queryset(self):
+        """Оптимизация запросов с select_related"""
+        return Task.objects.select_related(
+            'department', 'assigned_to', 'assigned_to__user', 
+            'created_by', 'created_by__user', 'project'
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -579,6 +590,34 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user.employee
+        employee = self.request.user.employee
+        
+        # Обработка создания нового проекта
+        # Проверяем, была ли выбрана опция "Создать новый проект"
+        project_value = form.data.get('project', '')
+        project_name = form.cleaned_data.get('project_name', '').strip()
+        
+        if project_value == '__new__' and project_name:
+            # Создаем новый проект заданий (общий, не привязанный к сотруднику)
+            project, created = TaskProject.objects.get_or_create(
+                name=project_name,
+                defaults={'created_by': employee}
+            )
+            form.instance.project = project
+            
+            if created:
+                messages.info(self.request, f'Проект "{project_name}" создан автоматически')
+        elif project_value and project_value != '__new__':
+            # Используем выбранный существующий проект
+            try:
+                project = TaskProject.objects.get(id=project_value)
+                form.instance.project = project
+            except TaskProject.DoesNotExist:
+                form.instance.project = None
+        else:
+            # Если ничего не выбрано - проект не указывается
+            form.instance.project = None
+        
         response = super().form_valid(form)
         
         # Логируем активность
@@ -629,6 +668,8 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             employee = self.request.user.employee
             context['available_departments'] = employee.get_available_departments_for_tasks()
             context['available_employees'] = employee.get_available_employees_for_assignments()
+            # Добавляем список всех проектов для автодополнения
+            context['task_projects'] = TaskProject.objects.all().order_by('name')
         return context
 
 
@@ -657,6 +698,34 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return False
 
     def form_valid(self, form):
+        employee = self.request.user.employee
+        
+        # Обработка создания нового проекта
+        # Проверяем, была ли выбрана опция "Создать новый проект"
+        project_value = form.data.get('project', '')
+        project_name = form.cleaned_data.get('project_name', '').strip()
+        
+        if project_value == '__new__' and project_name:
+            # Создаем новый проект заданий (общий, не привязанный к сотруднику)
+            project, created = TaskProject.objects.get_or_create(
+                name=project_name,
+                defaults={'created_by': employee}
+            )
+            form.instance.project = project
+            
+            if created:
+                messages.info(self.request, f'Проект "{project_name}" создан автоматически')
+        elif project_value and project_value != '__new__':
+            # Используем выбранный существующий проект
+            try:
+                project = TaskProject.objects.get(id=project_value)
+                form.instance.project = project
+            except TaskProject.DoesNotExist:
+                form.instance.project = None
+        else:
+            # Если ничего не выбрано - проект не указывается
+            form.instance.project = None
+        
         response = super().form_valid(form)
         
         # Логируем активность
@@ -683,6 +752,8 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             employee = self.request.user.employee
             context['available_departments'] = employee.get_available_departments_for_tasks()
             context['available_employees'] = employee.get_available_employees_for_assignments()
+            # Добавляем список всех проектов для автодополнения
+            context['task_projects'] = TaskProject.objects.all().order_by('name')
         return context
 
 

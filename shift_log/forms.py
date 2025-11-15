@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 from .models import (Attachment, DailyReport, Department, Employee,
                      MaterialWriteOff, Note, Project, ProjectTask, Shift,
-                     ShiftLog, ShiftType, Task, TaskReport)
+                     ShiftLog, ShiftType, Task, TaskProject, TaskReport)
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -180,11 +180,23 @@ class ShiftForm(forms.ModelForm):
 
 class TaskForm(forms.ModelForm):
     """Форма задания"""
+    project_name = forms.CharField(
+        max_length=100,
+        required=False,
+        label='Название нового проекта',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Введите название проекта (будет создан автоматически)',
+            'style': 'display: none;'
+        }),
+        help_text='Введите название проекта. Если проекта нет, он будет создан автоматически.'
+    )
+    
     class Meta:
         model = Task
         fields = [
             'title', 'description', 'comment', 'department', 'assigned_to',
-            'priority', 'task_type', 'task_scope', 'due_date'
+            'priority', 'task_type', 'task_scope', 'due_date', 'project'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -193,6 +205,7 @@ class TaskForm(forms.ModelForm):
             'due_date': forms.DateTimeInput(
                 attrs={'class': 'form-control', 'type': 'datetime-local'}
             ),
+            'project': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -266,6 +279,15 @@ class TaskForm(forms.ModelForm):
             
             # Делаем поле assigned_to необязательным для общих задач
             self.fields['assigned_to'].required = False
+            
+            # Настраиваем поле project - показываем все проекты заданий
+            self.fields['project'].required = False
+            self.fields['project'].queryset = TaskProject.objects.all().order_by('name')
+            self.fields['project'].empty_label = 'Без проекта'
+            
+            # Если редактируем существующую задачу, устанавливаем начальное значение project_name
+            if self.instance and self.instance.pk and self.instance.project:
+                self.fields['project_name'].initial = self.instance.project.name
 
     def clean(self):
         cleaned_data = super().clean()
@@ -311,6 +333,35 @@ class TaskForm(forms.ModelForm):
                         raise forms.ValidationError(
                             'Сотрудник должен принадлежать выбранному отделу.'
                         )
+            
+            # Обработка проекта
+            # Проверяем, была ли выбрана опция "Создать новый проект"
+            project_value = self.data.get('project', '')
+            project_name = cleaned_data.get('project_name', '').strip()
+            
+            if project_value == '__new__':
+                # Если выбрана опция создания нового проекта
+                cleaned_data['project'] = None  # Очищаем project, чтобы создать новый в view
+                
+                if project_name:
+                    # Проверяем, не существует ли уже такой проект
+                    existing_project = TaskProject.objects.filter(name=project_name).first()
+                    
+                    if existing_project:
+                        # Если проект уже существует, используем его
+                        cleaned_data['project'] = existing_project
+                        cleaned_data['project_name'] = ''  # Очищаем новое название
+                    # Иначе оставляем project_name для создания в view
+                # Если project_name пустой, оставляем project = None
+            elif project_value and project_value != '__new__':
+                # Если выбран существующий проект, очищаем project_name
+                cleaned_data['project_name'] = ''
+            else:
+                # Если ничего не выбрано - проект не указывается
+                cleaned_data['project'] = None
+                if not project_name:
+                    cleaned_data['project_name'] = ''
+        
         return cleaned_data
 
 
@@ -425,6 +476,13 @@ class TaskFilterForm(forms.Form):
         required=False,
         label='Отдел',
         widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    project = forms.ModelChoiceField(
+        queryset=TaskProject.objects.all(),
+        required=False,
+        label='Проект',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label='Все проекты'
     )
     status = forms.ChoiceField(
         choices=[('', 'Все статусы')] + list(Task.STATUS_CHOICES),

@@ -62,3 +62,9 @@ echo "  sudo systemctl restart ${SERVICE_NAME}   # Перезапустить"
 echo "  sudo systemctl status ${SERVICE_NAME}    # Статус"
 echo "  sudo journalctl -u ${SERVICE_NAME} -f    # Логи"
 
+
+
+
+
+
+

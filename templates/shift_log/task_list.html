@@ -54,6 +54,10 @@
                             {% endif %}
                         </div>
                         <div class="col-md-2 mb-3">
+                            <label for="{{ filter_form.project.id_for_label }}" class="form-label">Проект</label>
+                            {{ filter_form.project }}
+                        </div>
+                        <div class="col-md-2 mb-3">
                             <label for="{{ filter_form.task_type.id_for_label }}" class="form-label">Тип задачи</label>
                             {{ filter_form.task_type }}
                         </div>
@@ -68,10 +72,19 @@
                         <div class="col-md-2 mb-3">
                             {{ filter_form.assigned_to }}
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.date_from.id_for_label }}" class="form-label">С даты</label>
+                            {{ filter_form.date_from }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.date_to.id_for_label }}" class="form-label">По дату</label>
+                            {{ filter_form.date_to }}
+                        </div>
                         <div class="col-md-2 mb-3">
                             <div class="form-check mt-4">
                                 {{ filter_form.overdue }}
-
                             </div>
                         </div>
                     </div>
@@ -119,7 +132,8 @@
                             <table class="table table-hover table-sm">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 20%;">Название</th>
+                                        <th style="width: 18%;">Название</th>
+                                        <th style="width: 10%;">Проект</th>
                                         <th style="width: 8%;">Тип</th>
                                         <th style="width: 8%;">Назначение</th>
                                         <th style="width: 12%;">Исполнитель</th>
@@ -135,6 +149,26 @@
                                         <td>
                                             <strong>{{ task.title }}</strong><br>
                                             <small class="text-muted">{{ task.description|truncatechars:40 }}</small>
+                                        </td>
+                                        <td>
+                                            {% if task.project %}
+                                                {% if filter_form.project.value == task.project.id|stringformat:"s" %}
+                                                    <span class="badge bg-success" style="font-size: 0.85em;" title="Текущий фильтр">
+                                                        <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                                    </span>
+                                                {% else %}
+                                                    <a href="{% url 'shift_log:task_list' %}?project={{ task.project.id }}" 
+                                                       class="badge bg-primary text-decoration-none" 
+                                                       style="font-size: 0.85em;"
+                                                       title="Фильтр по проекту">
+                                                        <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                                    </a>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted" style="font-size: 0.85em;">
+                                                    <i class="bi bi-folder-x"></i> Без проекта
+                                                </span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">{{ task.get_task_type_display }}</span>
@@ -219,6 +253,7 @@
                             <thead>
                                 <tr>
                                     <th>Название</th>
+                                    <th>Проект</th>
                                     <th>Тип</th>
                                     <th>Назначение</th>
                                     <th>Отдел</th>
@@ -235,6 +270,26 @@
                                     <td>
                                         <strong>{{ task.title }}</strong><br>
                                         <small class="text-muted">{{ task.description|truncatechars:50 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if task.project %}
+                                            {% if filter_form.project.value == task.project.id|stringformat:"s" %}
+                                                <span class="badge bg-success" style="font-size: 0.9em;" title="Текущий фильтр">
+                                                    <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                                </span>
+                                            {% else %}
+                                                <a href="{% url 'shift_log:task_list' %}?project={{ task.project.id }}" 
+                                                   class="badge bg-primary text-decoration-none" 
+                                                   style="font-size: 0.9em;"
+                                                   title="Фильтр по проекту">
+                                                    <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted" style="font-size: 0.9em;">
+                                                <i class="bi bi-folder-x"></i> Без проекта
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <span class="badge bg-secondary">{{ task.get_task_type_display }}</span>

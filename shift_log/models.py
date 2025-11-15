@@ -523,6 +523,14 @@ class Task(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE, verbose_name="Отдел")
     assigned_to = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Назначен на", null=True, blank=True)
     created_by = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='created_tasks', verbose_name="Создано")
+    project = models.ForeignKey(
+        'TaskProject',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Проект",
+        related_name='tasks'
+    )
     
     priority = models.IntegerField(choices=PRIORITY_CHOICES, default=2, verbose_name="Приоритет")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Статус")
@@ -1061,6 +1069,28 @@ class Project(models.Model):
         verbose_name = 'Проект'
         verbose_name_plural = 'Проекты'
         unique_together = ('employee', 'name')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class TaskProject(models.Model):
+    """Модель проекта для заданий (общие проекты, не привязанные к сотруднику)"""
+    name = models.CharField(max_length=100, unique=True, verbose_name='Название проекта')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
+    created_by = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_task_projects',
+        verbose_name='Создано'
+    )
+
+    class Meta:
+        verbose_name = 'Проект задания'
+        verbose_name_plural = 'Проекты заданий'
         ordering = ['name']
 
     def __str__(self):

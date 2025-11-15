@@ -2,7 +2,8 @@ from django.contrib import admin
 
 from .models import (ActivityLog, Attachment, DailyReport, DailyReportPhoto,
                      Department, Employee, MaterialWriteOff, Note,
-                     Notification, Project, ProjectTask, Task, TaskReport)
+                     Notification, Project, ProjectTask, Task, TaskProject,
+                     TaskReport)
 
 
 @admin.register(Department)
@@ -162,4 +163,5 @@ class DailyReportPhotoAdmin(admin.ModelAdmin):
 admin.site.register(MaterialWriteOff)
 admin.site.register(Project)
 admin.site.register(ProjectTask)
+admin.site.register(TaskProject)
 admin.site.register(Note)

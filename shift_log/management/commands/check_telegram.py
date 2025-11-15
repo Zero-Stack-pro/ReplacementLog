@@ -79,3 +79,9 @@ class Command(BaseCommand):
         
         self.stdout.write('\n' + self.style.SUCCESS('=== Проверка завершена ==='))
 
+
+
+
+
+
+
