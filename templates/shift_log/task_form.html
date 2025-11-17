@@ -228,7 +228,7 @@
                             <input type="datetime-local" name="{{ form.due_date.name }}" 
                                    class="form-control {% if form.due_date.errors %}is-invalid{% endif %}"
                                    id="{{ form.due_date.id_for_label }}" 
-                                   value="{{ form.due_date.value|date:'Y-m-d\TH:i'|default:'' }}" required>
+                                   value="{{ form.due_date.value|default:'' }}" required>
                             {% if form.due_date.errors %}
                                 <div class="invalid-feedback">
                                     {{ form.due_date.errors.0 }}

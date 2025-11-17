@@ -3,6 +3,7 @@ import mimetypes
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from .models import (Attachment, DailyReport, Department, Employee,
                      MaterialWriteOff, Note, Project, ProjectTask, Shift,
@@ -178,6 +179,20 @@ class ShiftForm(forms.ModelForm):
         }
 
 
+class TaskProjectChoiceField(forms.ModelChoiceField):
+    """Поле выбора проекта задания с поддержкой опции создания нового проекта."""
+
+    def to_python(self, value):
+        if value in (None, '', '__new__'):
+            return value
+        return super().to_python(value)
+
+    def validate(self, value):
+        if value in (None, '', '__new__'):
+            return
+        super().validate(value)
+
+
 class TaskForm(forms.ModelForm):
     """Форма задания"""
     project_name = forms.CharField(
@@ -192,6 +207,13 @@ class TaskForm(forms.ModelForm):
         help_text='Введите название проекта. Если проекта нет, он будет создан автоматически.'
     )
     
+    project = TaskProjectChoiceField(
+        queryset=TaskProject.objects.none(),
+        required=False,
+        empty_label='Без проекта',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = Task
         fields = [
@@ -203,9 +225,9 @@ class TaskForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Дополнительные комментарии к заданию...'}),
             'due_date': forms.DateTimeInput(
-                attrs={'class': 'form-control', 'type': 'datetime-local'}
+                attrs={'class': 'form-control', 'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M'
             ),
-            'project': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -300,6 +322,24 @@ class TaskForm(forms.ModelForm):
                     self.fields['project'].initial = self.instance.project.id
                     # Устанавливаем начальное значение для project_name (на случай, если выберут "Создать новый")
                     self.fields['project_name'].initial = self.instance.project.name
+
+        # Настраиваем поддерживаемые форматы даты/времени
+        due_date_field = self.fields['due_date']
+        due_date_formats = ['%Y-%m-%dT%H:%M']
+        for format_pattern in due_date_field.input_formats or []:
+            if format_pattern not in due_date_formats:
+                due_date_formats.append(format_pattern)
+        due_date_field.input_formats = due_date_formats
+
+        # Устанавливаем начальное значение для due_date при редактировании
+        if (
+            not self.is_bound
+            and self.instance
+            and self.instance.pk
+            and self.instance.due_date
+        ):
+            localized_due_date = timezone.localtime(self.instance.due_date)
+            self.initial['due_date'] = localized_due_date.strftime('%Y-%m-%dT%H:%M')
 
     def clean(self):
         cleaned_data = super().clean()

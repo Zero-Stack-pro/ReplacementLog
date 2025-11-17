@@ -564,7 +564,41 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         return False
 
 
-class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class TaskProjectSelectionMixin:
+    """Миксин для обработки привязки проекта при создании и редактировании задач."""
+
+    def _assign_project(self, form) -> None:
+        employee = getattr(self.request.user, 'employee', None)
+        project_value = form.data.get('project', '')
+        project_name = form.cleaned_data.get('project_name', '').strip()
+        selected_project = form.cleaned_data.get('project')
+
+        if project_value == '__new__':
+            if isinstance(selected_project, TaskProject):
+                form.instance.project = selected_project
+                return
+            if project_name:
+                project, created = TaskProject.objects.get_or_create(
+                    name=project_name,
+                    defaults={'created_by': employee}
+                )
+                form.instance.project = project
+                if created:
+                    messages.info(
+                        self.request,
+                        f'Проект "{project_name}" создан автоматически'
+                    )
+                return
+            form.instance.project = None
+            return
+
+        if isinstance(selected_project, TaskProject):
+            form.instance.project = selected_project
+        else:
+            form.instance.project = None
+
+
+class TaskCreateView(TaskProjectSelectionMixin, LoginRequiredMixin, UserPassesTestMixin, CreateView):
     """Создание нового задания"""
     model = Task
     form_class = TaskForm
@@ -590,34 +624,7 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user.employee
-        employee = self.request.user.employee
-        
-        # Обработка создания нового проекта
-        # Проверяем, была ли выбрана опция "Создать новый проект"
-        project_value = form.data.get('project', '')
-        project_name = form.cleaned_data.get('project_name', '').strip()
-        
-        if project_value == '__new__' and project_name:
-            # Создаем новый проект заданий (общий, не привязанный к сотруднику)
-            project, created = TaskProject.objects.get_or_create(
-                name=project_name,
-                defaults={'created_by': employee}
-            )
-            form.instance.project = project
-            
-            if created:
-                messages.info(self.request, f'Проект "{project_name}" создан автоматически')
-        elif project_value and project_value != '__new__':
-            # Используем выбранный существующий проект
-            try:
-                project = TaskProject.objects.get(id=project_value)
-                form.instance.project = project
-            except TaskProject.DoesNotExist:
-                form.instance.project = None
-        else:
-            # Если ничего не выбрано - проект не указывается
-            form.instance.project = None
-        
+        self._assign_project(form)
         response = super().form_valid(form)
         
         # Логируем активность
@@ -673,7 +680,7 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return context
 
 
-class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class TaskUpdateView(TaskProjectSelectionMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """Редактирование задания"""
     model = Task
     form_class = TaskForm
@@ -698,43 +705,7 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return False
 
     def form_valid(self, form):
-        employee = self.request.user.employee
-        
-        # Обработка создания нового проекта
-        # Проверяем, была ли выбрана опция "Создать новый проект"
-        project_value = form.data.get('project', '')
-        project_name = form.cleaned_data.get('project_name', '').strip()
-        
-        if project_value == '__new__' and project_name:
-            # Создаем новый проект заданий (общий, не привязанный к сотруднику)
-            project, created = TaskProject.objects.get_or_create(
-                name=project_name,
-                defaults={'created_by': employee}
-            )
-            form.instance.project = project
-            
-            if created:
-                messages.info(self.request, f'Проект "{project_name}" создан автоматически')
-        elif project_value and project_value != '__new__':
-            # Используем выбранный существующий проект
-            try:
-                project = TaskProject.objects.get(id=project_value)
-                form.instance.project = project
-            except TaskProject.DoesNotExist:
-                # Если проект не найден, сохраняем текущий проект (если редактируем)
-                if form.instance.pk and form.instance.project:
-                    form.instance.project = form.instance.project
-                else:
-                    form.instance.project = None
-        else:
-            # Если ничего не выбрано (пустая строка)
-            # Проект уже установлен в cleaned_data в методе clean() формы
-            # Если при редактировании проект был, он сохранится, если нет - будет None
-            if form.cleaned_data.get('project'):
-                form.instance.project = form.cleaned_data['project']
-            else:
-                form.instance.project = None
-        
+        self._assign_project(form)
         response = super().form_valid(form)
         
         # Логируем активность

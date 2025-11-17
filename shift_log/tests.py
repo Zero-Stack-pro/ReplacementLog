@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
 
-from .models import Department, Employee
+from .models import Department, Employee, Task, TaskProject
 
 
 class EmployeeRoleTestCase(TestCase):
@@ -145,3 +147,88 @@ class EmployeeRoleTestCase(TestCase):
         self.assertEqual(
             employee_no_role.get_full_role_display(), 'Сотрудник'
         )
+
+
+class TaskCreationFlowTestCase(TestCase):
+    """Тесты создания задач с датой и проектом."""
+
+    def setUp(self):
+        """Создание общих сущностей для тестов."""
+        self.department = Department.objects.create(
+            name='Основной отдел',
+            description='Описание'
+        )
+        self.admin_user = User.objects.create_user(
+            username='admin_user',
+            password='testpass123',
+            email='admin@example.com'
+        )
+        self.admin_employee = Employee.objects.create(
+            user=self.admin_user,
+            department=self.department,
+            position='admin'
+        )
+        self.assignee_user = User.objects.create_user(
+            username='worker',
+            password='testpass123',
+            email='worker@example.com'
+        )
+        self.assignee_employee = Employee.objects.create(
+            user=self.assignee_user,
+            department=self.department,
+            position='employee'
+        )
+
+    def _base_payload(self, **overrides):
+        payload = {
+            'title': 'Новая задача',
+            'description': 'Описание задачи',
+            'comment': '',
+            'department': str(self.department.id),
+            'assigned_to': str(self.assignee_employee.id),
+            'priority': '2',
+            'task_type': 'routine',
+            'task_scope': 'individual',
+            'due_date': '2025-07-10T14:30',
+            'project': '',
+            'project_name': '',
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_task_create_accepts_datetime_local_format(self):
+        """Проверяет, что формат datetime-local проходит валидацию."""
+        self.client.login(username='admin_user', password='testpass123')
+        response = self.client.post(
+            reverse('shift_log:task_create'),
+            data=self._base_payload(),
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Task.objects.count(), 1)
+        task = Task.objects.first()
+        self.assertIsNotNone(task)
+        self.assertEqual(
+            timezone.localtime(task.due_date).strftime('%Y-%m-%dT%H:%M'),
+            '2025-07-10T14:30'
+        )
+
+    def test_task_create_with_new_project_option(self):
+        """Проверяет создание нового проекта при выборе опции."""
+        self.client.login(username='admin_user', password='testpass123')
+        response = self.client.post(
+            reverse('shift_log:task_create'),
+            data=self._base_payload(
+                project='__new__',
+                project_name='Проект А'
+            ),
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(TaskProject.objects.count(), 1)
+        project = TaskProject.objects.first()
+        self.assertIsNotNone(project)
+        self.assertEqual(project.name, 'Проект А')
+        task = Task.objects.first()
+        self.assertIsNotNone(task)
+        self.assertEqual(task.project, project)
