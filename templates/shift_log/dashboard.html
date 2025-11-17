@@ -121,7 +121,7 @@
                                         <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                         <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
                                         {% if task.project %}
-                                            <span class="badge bg-primary">
+                                            <span class="badge bg-primary badge-project">
                                                 <i class="bi bi-folder-fill"></i> {{ task.project.name }}
                                             </span>
                                         {% endif %}
@@ -171,7 +171,7 @@
                                     <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                     <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
                                     {% if task.project %}
-                                        <span class="badge bg-primary">
+                                        <span class="badge bg-primary badge-project">
                                             <i class="bi bi-folder-fill"></i> {{ task.project.name }}
                                         </span>
                                     {% endif %}

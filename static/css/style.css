@@ -1226,6 +1226,8 @@ footer .text-muted {
     margin-bottom: 0.75rem;
     font-size: 1rem;
     line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 .dashboard .task-item .badge {
@@ -1235,6 +1237,25 @@ footer .text-muted {
     margin-bottom: 0.5rem;
     border-radius: 0.5rem;
     font-weight: 500;
+}
+
+/* Ограничение длины названия проекта в плитке задач */
+.badge-project {
+    max-width: 150px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .badge-project {
+        max-width: 110px;
+    }
 }
 
 .dashboard .task-item small {
