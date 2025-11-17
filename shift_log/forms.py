@@ -220,11 +220,19 @@ class TaskForm(forms.ModelForm):
             my_level = role_order.get(my_role, 1)
             
             if not employee.is_admin:
+                # Для не-администраторов отдел скрыт, но должен передаваться в POST
                 self.fields['department'].widget = forms.HiddenInput()
-                self.fields['department'].initial = employee.department
+                if self.instance and self.instance.pk:
+                    # При редактировании используем отдел задачи
+                    self.fields['department'].initial = self.instance.department
+                else:
+                    # При создании используем отдел сотрудника
+                    self.fields['department'].initial = employee.department
                 self.fields['department'].queryset = Department.objects.filter(
                     id=employee.department.id
                 )
+                # Убеждаемся, что поле необязательно в форме, но будет установлено в clean()
+                self.fields['department'].required = False
             
             # Ограничиваем выбор сотрудников для назначения
             if not employee.is_admin:
@@ -285,9 +293,13 @@ class TaskForm(forms.ModelForm):
             self.fields['project'].queryset = TaskProject.objects.all().order_by('name')
             self.fields['project'].empty_label = 'Без проекта'
             
-            # Если редактируем существующую задачу, устанавливаем начальное значение project_name
-            if self.instance and self.instance.pk and self.instance.project:
-                self.fields['project_name'].initial = self.instance.project.name
+            # Если редактируем существующую задачу, устанавливаем начальные значения
+            if self.instance and self.instance.pk:
+                if self.instance.project:
+                    # Устанавливаем начальное значение для project
+                    self.fields['project'].initial = self.instance.project.id
+                    # Устанавливаем начальное значение для project_name (на случай, если выберут "Создать новый")
+                    self.fields['project_name'].initial = self.instance.project.name
 
     def clean(self):
         cleaned_data = super().clean()
@@ -297,11 +309,75 @@ class TaskForm(forms.ModelForm):
             role_order = {'employee': 1, 'supervisor': 2, 'admin': 3}
             my_role = getattr(employee, 'position', 'employee')
             my_level = role_order.get(my_role, 1)
+            
+            # При редактировании восстанавливаем обязательные поля из instance, если они отсутствуют
+            is_editing = self.instance and self.instance.pk
+            
+            # Восстанавливаем все обязательные поля из instance при редактировании, если они отсутствуют
+            if is_editing:
+                # Восстанавливаем title
+                if 'title' not in cleaned_data or not cleaned_data.get('title'):
+                    cleaned_data['title'] = self.instance.title
+                
+                # Восстанавливаем description
+                if 'description' not in cleaned_data or not cleaned_data.get('description'):
+                    cleaned_data['description'] = self.instance.description
+                
+                # Восстанавливаем task_type
+                if 'task_type' not in cleaned_data or not cleaned_data.get('task_type'):
+                    cleaned_data['task_type'] = self.instance.task_type
+                
+                # Восстанавливаем priority
+                if 'priority' not in cleaned_data or not cleaned_data.get('priority'):
+                    cleaned_data['priority'] = self.instance.priority
+                
+                # Восстанавливаем due_date
+                if 'due_date' not in cleaned_data or not cleaned_data.get('due_date'):
+                    cleaned_data['due_date'] = self.instance.due_date
+                
+                # Восстанавливаем comment (если есть)
+                if 'comment' not in cleaned_data:
+                    cleaned_data['comment'] = self.instance.comment
+            
+            # Обработка отдела
             if not employee.is_admin:
-                cleaned_data['department'] = employee.department
+                if is_editing:
+                    # При редактировании всегда используем текущий отдел задачи
+                    cleaned_data['department'] = self.instance.department
+                else:
+                    # При создании используем отдел сотрудника
+                    cleaned_data['department'] = employee.department
+            else:
+                # Для администраторов проверяем, есть ли отдел в cleaned_data
+                if not cleaned_data.get('department'):
+                    if is_editing:
+                        # При редактировании используем текущий отдел
+                        cleaned_data['department'] = self.instance.department
+                    # При создании department должен быть указан (валидация произойдет ниже)
+            
             department = cleaned_data.get('department')
             assigned_to = cleaned_data.get('assigned_to')
-            task_scope = cleaned_data.get('task_scope', 'individual')
+            
+            # Обработка task_scope
+            task_scope = cleaned_data.get('task_scope')
+            if not task_scope:
+                if is_editing:
+                    # При редактировании используем текущий task_scope
+                    task_scope = self.instance.task_scope
+                    cleaned_data['task_scope'] = task_scope
+                else:
+                    # При создании используем значение по умолчанию
+                    task_scope = 'individual'
+                    cleaned_data['task_scope'] = task_scope
+            
+            # Проверка отдела
+            if not department:
+                if is_editing:
+                    # При редактировании отдел должен быть (восстановлен выше)
+                    department = self.instance.department
+                    cleaned_data['department'] = department
+                else:
+                    raise forms.ValidationError('Необходимо указать отдел')
             
             if department and not employee.can_create_tasks_for_department(department):
                 raise forms.ValidationError(
@@ -313,10 +389,22 @@ class TaskForm(forms.ModelForm):
                 cleaned_data['assigned_to'] = None
             else:
                 # Для индивидуальных задач проверяем assigned_to
-                if not assigned_to:
-                    raise forms.ValidationError(
-                        'Для индивидуальных задач необходимо указать исполнителя'
-                    )
+                # При редактировании, если assigned_to не указан, используем текущий
+                if 'assigned_to' not in cleaned_data or not assigned_to:
+                    if is_editing:
+                        if self.instance.assigned_to:
+                            cleaned_data['assigned_to'] = self.instance.assigned_to
+                        else:
+                            # Если задача была индивидуальной, но исполнитель не был назначен
+                            raise forms.ValidationError(
+                                'Для индивидуальных задач необходимо указать исполнителя'
+                            )
+                    else:
+                        # При создании новой задачи assigned_to обязателен
+                        raise forms.ValidationError(
+                            'Для индивидуальных задач необходимо указать исполнителя'
+                        )
+                assigned_to = cleaned_data.get('assigned_to')
                 if assigned_to and not employee.is_admin:
                     if not employee.can_assign_tasks_to_employee(assigned_to):
                         raise forms.ValidationError(
@@ -354,15 +442,67 @@ class TaskForm(forms.ModelForm):
                     # Иначе оставляем project_name для создания в view
                 # Если project_name пустой, оставляем project = None
             elif project_value and project_value != '__new__':
-                # Если выбран существующий проект, очищаем project_name
-                cleaned_data['project_name'] = ''
+                # Если выбран существующий проект
+                try:
+                    project = TaskProject.objects.get(id=project_value)
+                    cleaned_data['project'] = project
+                    cleaned_data['project_name'] = ''  # Очищаем project_name
+                except TaskProject.DoesNotExist:
+                    # Если проект не найден, сохраняем текущий проект (если редактируем)
+                    if self.instance and self.instance.pk and self.instance.project:
+                        cleaned_data['project'] = self.instance.project
+                    else:
+                        cleaned_data['project'] = None
+                    cleaned_data['project_name'] = ''
             else:
-                # Если ничего не выбрано - проект не указывается
-                cleaned_data['project'] = None
+                # Если ничего не выбрано (пустая строка)
+                # При редактировании сохраняем текущий проект, если он был
+                if self.instance and self.instance.pk and self.instance.project:
+                    # Если редактируем и проект был установлен, сохраняем его
+                    cleaned_data['project'] = self.instance.project
+                else:
+                    # При создании новой задачи - проект не указывается
+                    cleaned_data['project'] = None
                 if not project_name:
                     cleaned_data['project_name'] = ''
         
         return cleaned_data
+    
+    def save(self, commit=True):
+        """Переопределяем save для правильной обработки при редактировании"""
+        instance = super().save(commit=False)
+        
+        # При редактировании убеждаемся, что все обязательные поля установлены
+        # Это защита на случай, если поля не попали в cleaned_data
+        if instance.pk and self.instance:
+            # Восстанавливаем поля из исходного instance, если они пустые
+            if not instance.title:
+                instance.title = self.instance.title
+            
+            if not instance.description:
+                instance.description = self.instance.description
+            
+            if not instance.task_type:
+                instance.task_type = self.instance.task_type
+            
+            if not instance.priority:
+                instance.priority = self.instance.priority
+            
+            if not instance.due_date:
+                instance.due_date = self.instance.due_date
+            
+            if not instance.department:
+                instance.department = self.instance.department
+            
+            if not instance.assigned_to and self.instance.assigned_to:
+                instance.assigned_to = self.instance.assigned_to
+            
+            if not instance.task_scope:
+                instance.task_scope = self.instance.task_scope
+        
+        if commit:
+            instance.save()
+        return instance
 
 
 class ShiftLogForm(forms.ModelForm):

@@ -171,7 +171,7 @@ def dashboard(request):
         active_tasks = Task.objects.filter(
             status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user'
+            'department', 'assigned_to', 'assigned_to__user', 'project'
         )
         is_admin_view = True
     elif employee.position == 'supervisor':
@@ -179,7 +179,7 @@ def dashboard(request):
             department=employee.department,
             status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user'
+            'department', 'assigned_to', 'assigned_to__user', 'project'
         )
         is_admin_view = True  # Используем структурированное отображение
     else:
@@ -189,7 +189,7 @@ def dashboard(request):
             Q(department=employee.department, task_scope='general'),
             status__in=['pending', 'in_progress', 'rework']
         ).exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user'
+            'department', 'assigned_to', 'assigned_to__user', 'project'
         )
         is_admin_view = False  # Будет определено после группировки
     
@@ -721,10 +721,19 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 project = TaskProject.objects.get(id=project_value)
                 form.instance.project = project
             except TaskProject.DoesNotExist:
-                form.instance.project = None
+                # Если проект не найден, сохраняем текущий проект (если редактируем)
+                if form.instance.pk and form.instance.project:
+                    form.instance.project = form.instance.project
+                else:
+                    form.instance.project = None
         else:
-            # Если ничего не выбрано - проект не указывается
-            form.instance.project = None
+            # Если ничего не выбрано (пустая строка)
+            # Проект уже установлен в cleaned_data в методе clean() формы
+            # Если при редактировании проект был, он сохранится, если нет - будет None
+            if form.cleaned_data.get('project'):
+                form.instance.project = form.cleaned_data['project']
+            else:
+                form.instance.project = None
         
         response = super().form_valid(form)
         

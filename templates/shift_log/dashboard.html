@@ -120,6 +120,11 @@
                                     <div class="mb-2">
                                         <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                         <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                                        {% if task.project %}
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                            </span>
+                                        {% endif %}
                                     </div>
                                     <small class="text-muted d-block">
                                         <strong>Исполнитель:</strong> 
@@ -165,6 +170,11 @@
                                 <div class="mb-2">
                                     <span class="badge bg-{{ task.get_status_color }}">{{ task.get_status_display }}</span>
                                     <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                                    {% if task.project %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                        </span>
+                                    {% endif %}
                                     {% if employee.position in 'admin,supervisor' %}
                                         <span class="badge bg-info">{{ task.department.name }}</span>
                                     {% endif %}

@@ -40,7 +40,7 @@
                             <option value="">Без проекта</option>
                             <option value="__new__">Создать новый проект</option>
                             {% for proj in form.project.field.queryset %}
-                                <option value="{{ proj.id }}" {% if form.project.value == proj.id %}selected{% endif %}>
+                                <option value="{{ proj.id }}" {% if form.project.value == proj.id|stringformat:"s" or form.project.initial == proj.id or form.instance.project.id == proj.id|add:0 %}selected{% endif %}>
                                     {{ proj.name }}
                                 </option>
                             {% endfor %}
@@ -289,6 +289,52 @@
 
 {% block extra_js %}
 <script>
+// Функция для переключения поля создания нового проекта (глобальная, чтобы была доступна из onchange)
+function toggleProjectField() {
+    var projectSelect = document.getElementById('{{ form.project.id_for_label }}');
+    var newProjectField = document.getElementById('new-project-field');
+    var newProjectInput = document.getElementById('{{ form.project_name.id_for_label }}');
+    
+    console.log('toggleProjectField called, projectSelect.value:', projectSelect ? projectSelect.value : 'projectSelect not found');
+    console.log('newProjectField:', newProjectField);
+    
+    if (!projectSelect || !newProjectField) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    if (projectSelect.value === '__new__') {
+        // Показываем поле для ввода нового названия проекта
+        console.log('Showing new project field');
+        newProjectField.style.display = 'block';
+        if (newProjectInput) {
+            newProjectInput.required = false; // Не делаем обязательным, так как проект опциональный
+            // Если поле пустое, фокусируемся на нем
+            if (!newProjectInput.value) {
+                setTimeout(function() {
+                    newProjectInput.focus();
+                }, 100);
+            }
+        }
+    } else {
+        // Скрываем поле для ввода нового названия проекта
+        console.log('Hiding new project field');
+        newProjectField.style.display = 'none';
+        if (newProjectInput) {
+            // Очищаем значение только если не выбран существующий проект
+            if (projectSelect.value && projectSelect.value !== '__new__') {
+                newProjectInput.value = '';
+            }
+            newProjectInput.required = false;
+        }
+    }
+    
+    // Перезапускаем валидацию
+    if (typeof validateForm === 'function') {
+        validateForm();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Форма задания загружена');
     
@@ -489,36 +535,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Функция для переключения поля создания нового проекта
-    function toggleProjectField() {
-        var projectSelect = document.getElementById('{{ form.project.id_for_label }}');
-        var newProjectField = document.getElementById('new-project-field');
-        var newProjectInput = document.getElementById('{{ form.project_name.id_for_label }}');
-        
-        if (projectSelect.value === '__new__') {
-            // Показываем поле для ввода нового названия проекта
-            newProjectField.style.display = 'block';
-            if (newProjectInput) {
-                newProjectInput.required = false; // Не делаем обязательным, так как проект опциональный
-            }
-        } else {
-            // Скрываем поле для ввода нового названия проекта
-            newProjectField.style.display = 'none';
-            if (newProjectInput) {
-                newProjectInput.value = ''; // Очищаем значение
-                newProjectInput.required = false;
-            }
-        }
-        
-        // Перезапускаем валидацию
-        if (typeof validateForm === 'function') {
-            validateForm();
-        }
-    }
-    
     // Инициализация при загрузке страницы
     var projectSelect = document.getElementById('{{ form.project.id_for_label }}');
     if (projectSelect) {
+        // Устанавливаем обработчик события change (дополнительно к onchange в HTML)
+        projectSelect.addEventListener('change', toggleProjectField);
+        // Вызываем функцию для установки начального состояния
         toggleProjectField();
     }
 });
