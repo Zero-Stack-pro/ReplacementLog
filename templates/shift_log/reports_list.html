@@ -15,74 +15,74 @@
                     </h1>
                     <p class="text-muted mb-0">
                         {% if employee.position == 'admin' %}
-                            Все задания за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                            Все задания
                         {% elif employee.position == 'supervisor' %}
-                            Задания отдела {{ employee.department.name }} за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                            Задания отдела {{ employee.department.name }}
                         {% else %}
-                            Мои задания за период: {{ filters.date_from|date:"d.m.Y" }} - {{ filters.date_to|date:"d.m.Y" }}
+                            Мои задания
                         {% endif %}
                     </p>
                 </div>
             </div>
 
             <!-- Статистика -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0">{{ stats.total }}</h4>
-                                    <small>Всего заданий</small>
+            <div class="row mb-4 g-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card stat-card-primary">
+                        <div class="stat-card-body">
+                            <div class="stat-card-header">
+                                <div class="stat-card-icon-wrapper">
+                                    <i class="bi bi-list-task"></i>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-list-task fs-1"></i>
-                                </div>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-number">{{ stats.total }}</div>
+                                <div class="stat-card-title">Всего заданий</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0">{{ stats.completed }}</h4>
-                                    <small>Завершено</small>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card stat-card-success">
+                        <div class="stat-card-body">
+                            <div class="stat-card-header">
+                                <div class="stat-card-icon-wrapper">
+                                    <i class="bi bi-check-circle"></i>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-check-circle fs-1"></i>
-                                </div>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-number">{{ stats.completed }}</div>
+                                <div class="stat-card-title">Завершено</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0">{{ stats.in_progress }}</h4>
-                                    <small>В работе</small>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card stat-card-warning">
+                        <div class="stat-card-body">
+                            <div class="stat-card-header">
+                                <div class="stat-card-icon-wrapper">
+                                    <i class="bi bi-clock"></i>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-clock fs-1"></i>
-                                </div>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-number">{{ stats.in_progress }}</div>
+                                <div class="stat-card-title">В работе</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0">{{ stats.pending }}</h4>
-                                    <small>Ожидает</small>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card stat-card-info">
+                        <div class="stat-card-body">
+                            <div class="stat-card-header">
+                                <div class="stat-card-icon-wrapper">
+                                    <i class="bi bi-hourglass-split"></i>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-hourglass-split fs-1"></i>
-                                </div>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-number">{{ stats.pending }}</div>
+                                <div class="stat-card-title">Ожидает</div>
                             </div>
                         </div>
                     </div>
@@ -97,12 +97,12 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="get" class="row g-3">
+                    <form method="get" class="row g-3 align-items-end">
                         {% if employee.position in 'admin,supervisor' %}
                         <div class="col-md-3">
-                            <div class="filter-label">Отдел</div>
+                            <label for="department" class="filter-label">Отдел</label>
                             {% if employee.position == 'admin' %}
-                                <select name="department" id="department" class="form-select filter-value">
+                                <select name="department" id="department" class="form-select">
                                     <option value="">Все отделы</option>
                                     {% for dept in departments %}
                                     <option value="{{ dept.id }}" {% if filters.department == dept.id|stringformat:"s" %}selected{% endif %}>
@@ -112,14 +112,14 @@
                                 </select>
                             {% else %}
                                 <input type="hidden" name="department" value="{{ employee.department.id }}">
-                                <div class="filter-value">{{ employee.department.name }}</div>
+                                <div class="form-control-plaintext">{{ employee.department.name }}</div>
                             {% endif %}
                         </div>
                         {% endif %}
                         
-                        <div class="col-md-3">
-                            <div class="filter-label">Статус</div>
-                            <select name="status" id="status" class="form-select filter-value">
+                        <div class="col-md-2">
+                            <label for="status" class="filter-label">Статус</label>
+                            <select name="status" id="status" class="form-select">
                                 <option value="">Все статусы</option>
                                 {% for status_code, status_name in status_choices %}
                                 <option value="{{ status_code }}" {% if filters.status == status_code %}selected{% endif %}>
@@ -129,22 +129,18 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-2">
-                            <div class="filter-label">Дата с</div>
-                            <input type="date" name="date_from" id="date_from" class="form-control filter-value" 
-                                   value="{{ filters.date_from }}">
+                        <div class="col-md-4">
+                            <label for="search" class="filter-label">Поиск по ключевым словам</label>
+                            <input type="text" name="search" id="search" class="form-control" 
+                                   placeholder="Название, описание, проект, исполнитель, отдел, создатель..." 
+                                   value="{{ filters.search }}">
                         </div>
                         
                         <div class="col-md-2">
-                            <div class="filter-label">Дата по</div>
-                            <input type="date" name="date_to" id="date_to" class="form-control filter-value" 
-                                   value="{{ filters.date_to }}">
-                        </div>
-                        
-                        <div class="col-md-2 d-flex align-items-end">
-                            <div class="d-flex gap-2 w-100">
+                            <label class="filter-label d-block" style="visibility: hidden;">Действия</label>
+                            <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary flex-fill">
-                                    <i class="bi bi-search"></i> Применить
+                                    <i class="bi bi-search"></i> Найти
                                 </button>
                                 <a href="{% url 'shift_log:reports_list' %}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle"></i>
@@ -175,6 +171,7 @@
                                         {% if employee.position in 'admin,supervisor' %}
                                         <th style="min-width: 150px;">Исполнитель</th>
                                         {% endif %}
+                                        <th style="min-width: 120px;">Проект</th>
                                         <th style="min-width: 100px;">Статус</th>
                                         <th style="min-width: 80px;">Приоритет</th>
                                         <th style="min-width: 100px;">Срок</th>
@@ -237,6 +234,17 @@
                                             {% endif %}
                                         </td>
                                         {% endif %}
+                                        <td>
+                                            {% if task.project %}
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-folder-fill"></i> {{ task.project.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-folder-x"></i> Без проекта
+                                                </span>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <span class="badge bg-{{ task.status|yesno:'success,warning,info,secondary' }}">
                                                 {{ task.get_status_display }}
@@ -302,12 +310,12 @@
                                 <ul class="pagination justify-content-center mb-0">
                                     {% if tasks.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page=1{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                            <a class="page-link" href="?page=1{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search|urlencode }}{% endif %}">
                                                 <i class="bi bi-chevron-double-left"></i>
                                             </a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                            <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search|urlencode }}{% endif %}">
                                                 <i class="bi bi-chevron-left"></i>
                                             </a>
                                         </li>
@@ -320,19 +328,19 @@
                                             </li>
                                         {% elif num > tasks.number|add:'-3' and num < tasks.number|add:'3' %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">{{ num }}</a>
+                                                <a class="page-link" href="?page={{ num }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search|urlencode }}{% endif %}">{{ num }}</a>
                                             </li>
                                         {% endif %}
                                     {% endfor %}
                                     
                                     {% if tasks.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ tasks.next_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                            <a class="page-link" href="?page={{ tasks.next_page_number }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search|urlencode }}{% endif %}">
                                                 <i class="bi bi-chevron-right"></i>
                                             </a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.date_from %}&date_from={{ filters.date_from }}{% endif %}{% if filters.date_to %}&date_to={{ filters.date_to }}{% endif %}">
+                                            <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% if filters.department %}&department={{ filters.department }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search|urlencode }}{% endif %}">
                                                 <i class="bi bi-chevron-double-right"></i>
                                             </a>
                                         </li>
@@ -346,7 +354,7 @@
                             <i class="bi bi-list-task text-muted" style="font-size: 3rem;"></i>
                             <h5 class="mt-3 text-muted">Задания не найдены</h5>
                             <p class="text-muted">По выбранным критериям задания не найдены</p>
-                            <a href="{% url 'shift_log:reports_list' %}?date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="btn btn-primary">
+                            <a href="{% url 'shift_log:reports_list' %}" class="btn btn-primary">
                                 <i class="bi bi-arrow-clockwise"></i> Сбросить фильтры
                             </a>
                         </div>
@@ -471,6 +479,216 @@
     }
 }
 
+/* Стили для статистических карточек - современный дизайн */
+.stat-card {
+    position: relative;
+    background: var(--bg-main);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 1px solid var(--border-light);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-body {
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card-header {
+    margin-bottom: 1rem;
+}
+
+.stat-card-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-card-icon-wrapper {
+    transform: scale(1.1);
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-card-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.stat-card-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Стили для разных типов карточек */
+.stat-card-primary {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.stat-card-primary .stat-card-icon-wrapper {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.stat-card-primary:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+}
+
+.stat-card-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%);
+}
+
+.stat-card-success .stat-card-icon-wrapper {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.stat-card-success:hover {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(52, 211, 153, 0.08) 100%);
+}
+
+.stat-card-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.05) 100%);
+}
+
+.stat-card-warning .stat-card-icon-wrapper {
+    background: var(--warning-gradient);
+    color: white;
+}
+
+.stat-card-warning:hover {
+    border-color: var(--warning-color);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.08) 100%);
+}
+
+.stat-card-info {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%);
+}
+
+.stat-card-info .stat-card-icon-wrapper {
+    background: var(--info-gradient);
+    color: white;
+}
+
+.stat-card-info:hover {
+    border-color: var(--info-color);
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(34, 211, 238, 0.08) 100%);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .stat-card-body {
+        padding: 1.25rem;
+    }
+    
+    .stat-card-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-card-number {
+        font-size: 2rem;
+    }
+    
+    .stat-card-title {
+        font-size: 0.8125rem;
+    }
+}
+
+/* Стили для фильтров - принудительное выравнивание */
+.card.filter-card .row.g-3 {
+    align-items: flex-end !important;
+    margin: 0 !important;
+}
+
+.card.filter-card .row.g-3 > [class*="col-"] {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding: 0 0.5rem !important;
+    margin: 0 !important;
+}
+
+.card.filter-card .filter-label,
+.card.filter-card label.filter-label {
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin: 0 0 0.5rem 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    line-height: 1.2 !important;
+    height: 1.5rem !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+.card.filter-card .form-select,
+.card.filter-card .form-control,
+.card.filter-card #status.form-select,
+.card.filter-card #department.form-select,
+.card.filter-card #search.form-control {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0.375rem 0.75rem !important;
+    box-sizing: border-box !important;
+    line-height: 1.5 !important;
+    vertical-align: middle !important;
+}
+
+.card.filter-card .btn,
+.card.filter-card .btn-primary,
+.card.filter-card .btn-outline-secondary {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0.375rem 0.75rem !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.card.filter-card .d-flex.gap-2 {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 38px !important;
+    align-items: center !important;
+    display: flex !important;
+}
+
 /* Минимальные исправления z-index для модальных окон */
 .modal {
     z-index: 1055 !important;
@@ -508,36 +726,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Выполняем очистку при загрузке
     cleanupBackdrops();
     
-    // Устанавливаем значения по умолчанию для дат (вчерашняя дата)
-    const dateFromInput = document.getElementById('date_from');
-    const dateToInput = document.getElementById('date_to');
-    
-    // Если поля дат пустые, устанавливаем вчерашнюю дату
-    if (dateFromInput && !dateFromInput.value) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        dateFromInput.value = yesterday.toISOString().split('T')[0];
-    }
-    
-    if (dateToInput && !dateToInput.value) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        dateToInput.value = yesterday.toISOString().split('T')[0];
-    }
-    
-    // Автоматически отправляем форму при изменении дат, если они установлены
-    function autoSubmitForm() {
-        if (dateFromInput.value && dateToInput.value) {
-            document.querySelector('form[method="get"]').submit();
-        }
-    }
-    
-    // Добавляем обработчики событий для автоматической отправки формы
-    if (dateFromInput) {
-        dateFromInput.addEventListener('change', autoSubmitForm);
-    }
-    if (dateToInput) {
-        dateToInput.addEventListener('change', autoSubmitForm);
+    // Автоматически отправляем форму при нажатии Enter в поле поиска
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.querySelector('form[method="get"]').submit();
+            }
+        });
     }
     
     // Функция для открытия модального окна с историей изменений

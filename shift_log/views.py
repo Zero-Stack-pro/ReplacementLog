@@ -1478,43 +1478,37 @@ def download_attachment(request, attachment_id):
 
 @login_required
 def reports_list(request):
-    """Список заданий с историей изменений за выбранный период"""
+    """Список заданий с поиском по ключевым словам"""
     if not hasattr(request.user, 'employee'):
         messages.error(request, 'Профиль сотрудника не найден')
         return redirect('shift_log:dashboard')
     
     employee = request.user.employee
     
-    # Устанавливаем значения по умолчанию (вчерашняя дата)
-    yesterday = (timezone.now() - timedelta(days=1)).date()
-    default_date_from = yesterday.strftime('%Y-%m-%d')
-    default_date_to = yesterday.strftime('%Y-%m-%d')
-    
     # Фильтрация
     department_filter = request.GET.get('department')
     status_filter = request.GET.get('status')
-    date_from = request.GET.get('date_from', default_date_from)
-    date_to = request.GET.get('date_to', default_date_to)
+    search_query = request.GET.get('search', '').strip()
     
     # Получаем задания в зависимости от роли пользователя
     if employee.position == 'admin':
         # Администратор видит все задания
         tasks = Task.objects.exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user'
+            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user', 'project'
         ).prefetch_related('taskreport_set').order_by('-created_at')
     elif employee.position == 'supervisor':
         # Руководитель видит задания только своего отдела
         tasks = Task.objects.filter(
             department=employee.department
         ).exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user'
+            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user', 'project'
         ).prefetch_related('taskreport_set').order_by('-created_at')
     else:
         # Сотрудник видит только свои задания
         tasks = Task.objects.filter(
             assigned_to=employee
         ).exclude(status='cancelled').select_related(
-            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user'
+            'department', 'assigned_to', 'assigned_to__user', 'created_by', 'created_by__user', 'project'
         ).prefetch_related('taskreport_set').order_by('-created_at')
     
     # Для руководителей автоматически устанавливаем фильтр по их отделу, если не указан другой
@@ -1528,12 +1522,32 @@ def reports_list(request):
     if status_filter:
         tasks = tasks.filter(status=status_filter)
     
-    # Всегда применяем фильтр по датам
-    if date_from:
-        tasks = tasks.filter(created_at__date__gte=date_from)
-    
-    if date_to:
-        tasks = tasks.filter(created_at__date__lte=date_to)
+    # Поиск по ключевым словам
+    if search_query:
+        tasks = tasks.filter(
+            # Поиск по полям задачи
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(comment__icontains=search_query) |
+            # Поиск по проекту
+            Q(project__name__icontains=search_query) |
+            # Поиск по отделу
+            Q(department__name__icontains=search_query) |
+            # Поиск по исполнителю (имя, фамилия, username)
+            Q(assigned_to__user__first_name__icontains=search_query) |
+            Q(assigned_to__user__last_name__icontains=search_query) |
+            Q(assigned_to__user__username__icontains=search_query) |
+            Q(assigned_to__user__email__icontains=search_query) |
+            # Поиск по создателю (имя, фамилия, username)
+            Q(created_by__user__first_name__icontains=search_query) |
+            Q(created_by__user__last_name__icontains=search_query) |
+            Q(created_by__user__username__icontains=search_query) |
+            Q(created_by__user__email__icontains=search_query) |
+            # Поиск по типу задачи (по отображаемому названию)
+            Q(task_type__icontains=search_query) |
+            # Поиск по статусу (по отображаемому названию)
+            Q(status__icontains=search_query)
+        )
     
     # Пагинация
     paginator = Paginator(tasks, 20)
@@ -1548,7 +1562,7 @@ def reports_list(request):
     else:
         departments = Department.objects.none()
     
-    # Статистика
+    # Статистика (на основе всех задач, не только текущей страницы)
     total_tasks = tasks.count()
     completed_tasks = tasks.filter(status='completed').count()
     in_progress_tasks = tasks.filter(status='in_progress').count()
@@ -1562,8 +1576,7 @@ def reports_list(request):
         'filters': {
             'department': department_filter,
             'status': status_filter,
-            'date_from': date_from,
-            'date_to': date_to,
+            'search': search_query,
         },
         'stats': {
             'total': total_tasks,
