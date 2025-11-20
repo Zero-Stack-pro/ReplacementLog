@@ -1007,9 +1007,12 @@ class DailyReportPhoto(models.Model):
         """Проверяет существование файла на диске"""
         if not self.image:
             return False
-        # Если запись есть в базе данных, считаем что файл существует
-        # (файлы могут находиться на сервере, а не локально)
-        return True
+        try:
+            # Проверяем реальное существование файла через storage
+            return self.image.storage.exists(self.image.name)
+        except Exception:
+            # Если произошла ошибка, возвращаем False
+            return False
 
 UNIT_CHOICES = [
     ('m', 'м'),

@@ -73,3 +73,5 @@ echo "  sudo journalctl -u ${SERVICE_NAME} -f    # Логи"
 
 
 
+
+
